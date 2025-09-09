@@ -1108,7 +1108,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const osMismatch = await withTimeout(fetchTCPFingerprint(), 5000);
     await sleep(1000);
 
-    flashUpdate("🗺️ 正在进行 ja4 指纹识别…");
+    flashUpdate("🗺️ 正在进行 TLS 指纹识别…");
     const pingRTT = await withTimeout(measurePingRTT(CONFIG.pingURL), 5000);
     const clientIP = window.detectedClientIP ?? null;
     let countryCode = "Unknown";
