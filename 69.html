@@ -820,7 +820,25 @@ div#resultContainer {
 window.addEventListener("DOMContentLoaded", () => {
   const statusText = document.getElementById("statusText");
   const finalResult = document.getElementById("finalResult");
-  const loader = document.getElementById("engine-loader");
+  const loader = document.getElementById("engine-loader") || (() => {
+    const el = document.createElement("div");
+    el.id = "engine-loader";
+    el.style.display = "none";
+    el.style.position = "fixed";
+    el.style.top = "50%";
+    el.style.left = "50%";
+    el.style.transform = "translate(-50%, -50%)";
+    el.style.padding = "20px";
+    el.style.background = "#00000080";
+    el.style.color = "#fff";
+    el.style.fontSize = "18px";
+    el.style.borderRadius = "12px";
+    el.style.zIndex = "9999";
+    el.innerText = "正在检测中…";
+    document.body.appendChild(el);
+    return el;
+  })();
+
   const detectBtn = document.getElementById("detectBtn");
   const resultContainer = document.getElementById("resultContainer");
 
@@ -831,13 +849,13 @@ window.addEventListener("DOMContentLoaded", () => {
     geoWorkerAPI: "https://ipip.cti.pp.ua?ip=",
     ipapiURL: "https://api.ipapi.is",
     wsTimeout: 3000,
-    vpsRegion: "US",
+    webrtcTimeout: 5000,
     stunServers: [
       { urls: "stun:stun.ss.aaak.dpdns.org:3478" },
       { urls: "stun:stun.cc.aaak.dpdns.org:3478" },
       { urls: "stun:stun1.l.google.com:19302" }
     ],
-    webrtcTimeout: 5000
+    vpsRegion: "US"
   };
 
   const GEO_BASELINE = {
@@ -897,61 +915,6 @@ window.addEventListener("DOMContentLoaded", () => {
     statusText.classList.add("flashStep");
   }
 
-  function showResultHTML(items, score) {
-    const container = document.createElement("div");
-    container.style.margin = "auto";
-    container.style.borderRadius = "25px";
-    container.style.padding = "20px";
-    container.style.color = "#ddd";
-    container.style.fontSize = "17px";
-    container.style.width = "90%";
-    container.style.animation = "breathing 3s ease-in-out infinite";
-    container.style.transition = "box-shadow 0.3s ease";
-    container.style.background = "#00000030";
-
-    const table = document.createElement("table");
-    table.style.width = "100%";
-    table.style.borderCollapse = "collapse";
-
-    items.forEach(([label, status, color]) => {
-      const row = document.createElement("tr");
-
-      const left = document.createElement("td");
-      left.textContent = label;
-      left.style.padding = "8px";
-      left.style.borderBottom = "1px solid #2c3b51";
-      left.style.fontWeight = "bold";
-
-      const right = document.createElement("td");
-      right.textContent = status;
-      right.style.padding = "8px";
-      right.style.borderBottom = "1px solid #2c3b51";
-      right.style.color = color;
-      right.style.fontWeight = "bold";
-
-      row.appendChild(left);
-      row.appendChild(right);
-      table.appendChild(row);
-    });
-
-    let color = "#00ff22";
-    if (score > 70) color = "#fb0000";
-    else if (score > 30) color = "#fff900";
-
-    const footer = document.createElement("div");
-    footer.style.marginTop = "50px";
-    footer.style.fontSize = "21px";
-    footer.style.textAlign = "center";
-    footer.style.fontWeight = "bold";
-    footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="color:${color}">${score}%</strong>`;
-
-    container.appendChild(table);
-    container.appendChild(footer);
-
-    resultContainer.innerHTML = "";
-    resultContainer.appendChild(container);
-  }
-
   function getBrowserTimezone() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }
@@ -1008,7 +971,68 @@ window.addEventListener("DOMContentLoaded", () => {
       ? { status: "🔴 检测到异常", color: "#fb0000" }
       : { status: "🟢 正常", color: "#00ff22" };
   }
-});
+  async function fetchIPAPIData() {
+    try {
+      const res = await fetch(CONFIG.ipapiURL, { cache: "no-store" });
+      const json = await res.json();
+      IPStore.ipapi = json.ip;
+      return json;
+    } catch {
+      return null;
+    }
+  }
+
+  async function fetchTCPFingerprint() {
+    try {
+      const res = await fetch(CONFIG.tcpipAPI, { cache: "no-store" });
+      const json = await res.json();
+      IPStore.tcp = json.lookup_ip;
+      return json.os_mismatch ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function measurePingRTT(url) {
+    const start = performance.now();
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      const json = await res.json();
+      IPStore.ping = json.ip;
+      return performance.now() - start;
+    } catch {
+      return null;
+    }
+  }
+
+  async function measureWebSocketRTT(url) {
+    return new Promise(resolve => {
+      let ws;
+      let pingStart;
+      let resolved = false;
+      const cleanUp = value => {
+        if (resolved) return;
+        resolved = true;
+        clearTimeout(timeout);
+        try { ws?.close(); } catch {}
+        resolve(value);
+      };
+      const timeout = setTimeout(() => cleanUp(null), CONFIG.wsTimeout);
+      try {
+        ws = new WebSocket(url);
+      } catch {
+        return cleanUp(null);
+      }
+      ws.onopen = () => {
+        pingStart = performance.now();
+        setTimeout(() => {
+          try { ws.send("ping"); } catch {}
+        }, 300);
+      };
+      ws.onmessage = () => cleanUp(performance.now() - pingStart);
+      ws.onerror = () => cleanUp(null);
+    });
+  }
 
   async function fetchCountryFromIP(ip) {
     try {
@@ -1018,33 +1042,6 @@ window.addEventListener("DOMContentLoaded", () => {
     } catch {
       return "Unknown";
     }
-  }
-
-  function calculateSpoofScore(ipapi, delayDiff, osMismatch, geoNote, cdnMismatch, webrtcMismatch) {
-    let score = 0;
-
-    if (ipapi?.is_tor) score += 100;
-    if (ipapi?.is_vpn) score += 100;
-    if (ipapi?.is_proxy) score += 30;
-    if (ipapi?.is_crawler) score += 15;
-    if (ipapi?.is_abuser) score += 15;
-    if (ipapi?.is_datacenter) score += 10;
-
-    const browserTZ = getBrowserTimezone();
-    const ipTZ = ipapi?.location?.timezone ?? null;
-    const tzMismatch = ipTZ && ipTZ !== browserTZ;
-    if (tzMismatch) score += 10;
-
-    if (delayDiff !== null && delayDiff > 90) score += 20;
-    if (osMismatch === true) score += 50;
-    if (geoNote === "异常 ❌") score += 30;
-    if (cdnMismatch === true) score += 50;
-    if (webrtcMismatch === true) score += 50;
-
-    return {
-      score: Math.min(score, 100),
-      tzMismatch
-    };
   }
 
   async function runCDNTriangleMeasurement(ip) {
@@ -1107,6 +1104,32 @@ window.addEventListener("DOMContentLoaded", () => {
       : `📡 CDN 三角测量: ❌ 最优入口 ${best.label}（${best.pop_code}）与 IP归属 ${bestCountryCode} 不符`;
   }
 
+  function calculateSpoofScore(ipapi, delayDiff, osMismatch, geoNote, cdnMismatch, webrtcMismatch) {
+    let score = 0;
+
+    if (ipapi?.is_tor) score += 100;
+    if (ipapi?.is_vpn) score += 100;
+    if (ipapi?.is_proxy) score += 30;
+    if (ipapi?.is_crawler) score += 15;
+    if (ipapi?.is_abuser) score += 15;
+    if (ipapi?.is_datacenter) score += 10;
+
+    const browserTZ = getBrowserTimezone();
+    const ipTZ = ipapi?.location?.timezone ?? null;
+    const tzMismatch = ipTZ && ipTZ !== browserTZ;
+    if (tzMismatch) score += 10;
+
+    if (delayDiff !== null && delayDiff > 90) score += 20;
+    if (osMismatch === true) score += 50;
+    if (geoNote === "异常 ❌") score += 30;
+    if (cdnMismatch === true) score += 50;
+    if (webrtcMismatch === true) score += 50;
+
+    return {
+      score: Math.min(score, 100),
+      tzMismatch
+    };
+  }
   async function runAnalysisCore() {
     flashUpdate("⏳ 正在初始化检测，请稍候…");
     await sleep(1000);
@@ -1186,7 +1209,9 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   detectBtn.addEventListener("click", runAnalysis);
+});
 </script>
+
 
 
 
