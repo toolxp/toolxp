@@ -607,8 +607,11 @@ span#finalResult {
   }
 
 /* 激活呼吸灯效果的类 */
-.breathing-active {
-  animation: breathing 3s ease-in-out infinite;
+#resultContainer  {
+	width: 95%;
+	max-wudth: 875px;
+    animation: breathing 3s ease-in-out infinite;
+	transition: box-shadow 0.3s ease;
 }
 
 .submenu a {
@@ -883,8 +886,6 @@ window.addEventListener("DOMContentLoaded", () => {
   function showResultHTML(items, score) {
     const container = document.createElement("div");
     container.style.margin = "40px auto";
-    container.style.maxWidth = "700px";
-    container.style.border = "1px solid #444";
     container.style.borderRadius = "8px";
     container.style.padding = "20px";
     container.style.background = "#1a1f2b";
