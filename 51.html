@@ -915,8 +915,59 @@ window.addEventListener("DOMContentLoaded", () => {
     statusText.classList.add("flashStep");
   }
 
-  function getBrowserTimezone() {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  function showResultHTML(items, score) {
+    const container = document.createElement("div");
+    container.style.margin = "auto";
+    container.style.borderRadius = "25px";
+    container.style.padding = "20px";
+    container.style.color = "#ddd";
+    container.style.fontSize = "17px";
+    container.style.width = "90%";
+    container.style.animation = "breathing 3s ease-in-out infinite";
+    container.style.transition = "box-shadow 0.3s ease";
+    container.style.background = "#00000030";
+
+    const table = document.createElement("table");
+    table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
+
+    items.forEach(([label, status, color]) => {
+      const row = document.createElement("tr");
+
+      const left = document.createElement("td");
+      left.textContent = label;
+      left.style.padding = "8px";
+      left.style.borderBottom = "1px solid #2c3b51";
+      left.style.fontWeight = "bold";
+
+      const right = document.createElement("td");
+      right.textContent = status;
+      right.style.padding = "8px";
+      right.style.borderBottom = "1px solid #2c3b51";
+      right.style.color = color;
+      right.style.fontWeight = "bold";
+
+      row.appendChild(left);
+      row.appendChild(right);
+      table.appendChild(row);
+    });
+
+    let color = "#00ff22";
+    if (score > 70) color = "#fb0000";
+    else if (score > 30) color = "#fff900";
+
+    const footer = document.createElement("div");
+    footer.style.marginTop = "50px";
+    footer.style.fontSize = "21px";
+    footer.style.textAlign = "center";
+    footer.style.fontWeight = "bold";
+    footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="color:${color}">${score}%</strong>`;
+
+    container.appendChild(table);
+    container.appendChild(footer);
+
+    resultContainer.innerHTML = "";
+    resultContainer.appendChild(container);
   }
 
   async function detectWebRTCIP() {
@@ -947,7 +998,13 @@ window.addEventListener("DOMContentLoaded", () => {
         if (rtc.iceGatheringState === "complete" && !resolved) {
           resolved = true;
           clearTimeout(timeout);
-          const valid = [...candidates].filter(ip => !ip.startsWith("192.") && !ip.startsWith("10.") && !ip.startsWith("172."));
+          const valid = [...candidates].filter(ip => 
+            !ip.startsWith("192.") && 
+            !ip.startsWith("10.") && 
+            !ip.startsWith("172.") && 
+            !ip.startsWith("127.") && 
+            !ip.startsWith("0.")
+          );
           resolve(valid[0] || null);
         }
       };
@@ -971,6 +1028,17 @@ window.addEventListener("DOMContentLoaded", () => {
       ? { status: "🔴 检测到异常", color: "#fb0000" }
       : { status: "🟢 正常", color: "#00ff22" };
   }
+      
+
+
+
+
+
+
+
+
+
+	
   async function fetchIPAPIData() {
     try {
       const res = await fetch(CONFIG.ipapiURL, { cache: "no-store" });
