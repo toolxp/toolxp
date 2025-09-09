@@ -889,7 +889,7 @@ window.addEventListener("DOMContentLoaded", () => {
     container.style.borderRadius = "25px";
     container.style.padding = "20px";
     container.style.color = "#ddd";
-    container.style.fontSize = "19px";
+    container.style.fontSize = "17px";
 /* 激活呼吸灯效果的类 */
 	container.style.width = "90%";
     container.style.animation = "breathing 3s ease-in-out infinite";
@@ -906,12 +906,12 @@ window.addEventListener("DOMContentLoaded", () => {
       const left = document.createElement("td");
       left.textContent = label;
       left.style.padding = "8px";
-      left.style.borderBottom = "1px solid #333";
+      left.style.borderBottom = "1px solid #2c3b51";
 
       const right = document.createElement("td");
       right.textContent = status;
       right.style.padding = "8px";
-      right.style.borderBottom = "1px solid #333";
+      right.style.borderBottom = "1px solid #2c3b51";
       right.style.color = color;
 
       row.appendChild(left);
@@ -919,14 +919,16 @@ window.addEventListener("DOMContentLoaded", () => {
       table.appendChild(row);
     });
 
-    let color = "#00ff99";
-    if (score > 70) color = "#ff4d4d";
-    else if (score > 30) color = "#ffaa00";
+    let color = "#00ff22";
+    if (score > 70) color = "#fb0000";
+    else if (score > 30) color = "#fff900";
 
     const footer = document.createElement("div");
-    footer.style.marginTop = "20px";
-    footer.style.fontSize = "18px";
+    footer.style.marginTop = "50px";
+    footer.style.fontSize = "21px";
     footer.style.textAlign = "center";
+	footer.style.font-weight = "bold";
+	  
     footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="color:${color}">${score}%</strong>`;
 
     container.appendChild(table);
@@ -1142,17 +1144,17 @@ window.addEventListener("DOMContentLoaded", () => {
     const spoofResult = calculateSpoofScore(ipapi, delayDiff, osMismatch, geoNote, cdnMismatch);
 
     const items = [
-      ["是否标记为 TOR", ipapi?.is_tor ? "🔴 已标记" : "🟢 未标记", ipapi?.is_tor ? "#ff4d4d" : "#00ff99"],
-      ["是否标记为 VPN", ipapi?.is_vpn ? "🔴 已标记" : "🟢 未标记", ipapi?.is_vpn ? "#ff4d4d" : "#00ff99"],
-      ["是否标记为 代理", ipapi?.is_proxy ? "🔴 已标记" : "🟢 未标记", ipapi?.is_proxy ? "#ff4d4d" : "#00ff99"],
-      ["是否标记为 爬虫", ipapi?.is_crawler ? "🔴 已标记" : "🟢 未标记", ipapi?.is_crawler ? "#ff4d4d" : "#00ff99"],
-      ["是否标记为 滥用IP", ipapi?.is_abuser ? "🔴 已标记" : "🟢 未标记", ipapi?.is_abuser ? "#ff4d4d" : "#00ff99"],
-      ["是否标记为 数据中心", ipapi?.is_datacenter ? "🔴 已标记" : "🟢 未标记", ipapi?.is_datacenter ? "#ff4d4d" : "#00ff99"],
-      ["时区是否一致", spoofResult.tzMismatch ? "🔴 检测到异常" : "🟢 正常", spoofResult.tzMismatch ? "#ff4d4d" : "#00ff99"],
-      ["指纹真实性", osMismatch === true ? "🔴 检测到异常" : osMismatch === false ? "🟢 正常" : "❓ 未识别", osMismatch === true ? "#ff4d4d" : "#00ff99"],
-      ["链路延迟测量", delayDiff !== null && delayDiff > 90 ? "🔴 检测到异常" : "🟢 正常", delayDiff !== null && delayDiff > 90 ? "#ff4d4d" : "#00ff99"],
-      ["地理位置延迟检测", geoNote === "异常 ❌" ? "🔴 检测到异常" : "🟢 正常", geoNote === "异常 ❌" ? "#ff4d4d" : "#00ff99"],
-      ["POP 最优入口检测", cdnMismatch ? "🔴 检测到异常" : "🟢 正常", cdnMismatch ? "#ff4d4d" : "#00ff99"]
+      ["是否标记为 TOR", ipapi?.is_tor ? "🔴 已标记" : "🟢 未标记", ipapi?.is_tor ? "#fb0000" : "#00ff22"],
+      ["是否标记为 VPN", ipapi?.is_vpn ? "🔴 已标记" : "🟢 未标记", ipapi?.is_vpn ? "#fb0000" : "#00ff22"],
+      ["是否标记为 代理", ipapi?.is_proxy ? "🔴 已标记" : "🟢 未标记", ipapi?.is_proxy ? "#fb0000" : "#00ff22"],
+      ["是否标记为 爬虫", ipapi?.is_crawler ? "🔴 已标记" : "🟢 未标记", ipapi?.is_crawler ? "#fb0000" : "#00ff22"],
+      ["是否标记为 滥用IP", ipapi?.is_abuser ? "🔴 已标记" : "🟢 未标记", ipapi?.is_abuser ? "#fb0000" : "#00ff22"],
+      ["是否标记为 数据中心", ipapi?.is_datacenter ? "🔴 已标记" : "🟢 未标记", ipapi?.is_datacenter ? "#fb0000" : "#00ff22"],
+      ["时区是否一致", spoofResult.tzMismatch ? "🔴 检测到异常" : "🟢 正常", spoofResult.tzMismatch ? "#fb0000" : "#00ff22"],
+      ["指纹真实性", osMismatch === true ? "🔴 检测到异常" : osMismatch === false ? "🟢 正常" : "❓ 未识别", osMismatch === true ? "#fb0000" : "#00ff22"],
+      ["链路延迟测量", delayDiff !== null && delayDiff > 90 ? "🔴 检测到异常" : "🟢 正常", delayDiff !== null && delayDiff > 90 ? "#fb0000" : "#00ff22"],
+      ["地理位置延迟检测", geoNote === "异常 ❌" ? "🔴 检测到异常" : "🟢 正常", geoNote === "异常 ❌" ? "#fb0000" : "#00ff22"],
+      ["POP 最优入口检测", cdnMismatch ? "🔴 检测到异常" : "🟢 正常", cdnMismatch ? "#fb0000" : "#00ff22"]
     ];
 
     showResultHTML(items, spoofResult.score);
