@@ -829,8 +829,15 @@ window.addEventListener("DOMContentLoaded", () => {
     wsURL: "wss://us.cti.pp.ua/ws",
     tcpipAPI: "https://tcp.cti.pp.ua/classify",
     geoWorkerAPI: "https://ipip.cti.pp.ua?ip=",
+    ipapiURL: "https://api.ipapi.is",
     wsTimeout: 3000,
-    vpsRegion: "US"
+    vpsRegion: "US",
+    stunServers: [
+      { urls: "stun:stun.ss.aaak.dpdns.org:3478" },
+      { urls: "stun:stun.cc.aaak.dpdns.org:3478" },
+      { urls: "stun:stun1.l.google.com:19302" }
+    ],
+    webrtcTimeout: 5000
   };
 
   const GEO_BASELINE = {
@@ -864,6 +871,13 @@ window.addEventListener("DOMContentLoaded", () => {
     "HK": { "US": { "expectedRTT": 55, "tolerance": 70 } }
   };
 
+  const IPStore = {
+    webrtc: null,
+    ipapi: null,
+    ping: null,
+    tcp: null
+  };
+
   function withTimeout(promise, timeoutMs) {
     return Promise.race([
       promise,
@@ -890,10 +904,9 @@ window.addEventListener("DOMContentLoaded", () => {
     container.style.padding = "20px";
     container.style.color = "#ddd";
     container.style.fontSize = "17px";
-/* 激活呼吸灯效果的类 */
-	container.style.width = "90%";
+    container.style.width = "90%";
     container.style.animation = "breathing 3s ease-in-out infinite";
-	container.style.transition = "box-shadow 0.3s ease";
+    container.style.transition = "box-shadow 0.3s ease";
     container.style.background = "#00000030";
 
     const table = document.createElement("table");
@@ -907,14 +920,14 @@ window.addEventListener("DOMContentLoaded", () => {
       left.textContent = label;
       left.style.padding = "8px";
       left.style.borderBottom = "1px solid #2c3b51";
-	  left.style.fontWeight = "bold";	
+      left.style.fontWeight = "bold";
 
       const right = document.createElement("td");
       right.textContent = status;
       right.style.padding = "8px";
       right.style.borderBottom = "1px solid #2c3b51";
       right.style.color = color;
-	  right.style.fontWeight = "bold";	
+      right.style.fontWeight = "bold";
 
       row.appendChild(left);
       row.appendChild(right);
@@ -930,8 +943,6 @@ window.addEventListener("DOMContentLoaded", () => {
     footer.style.fontSize = "21px";
     footer.style.textAlign = "center";
     footer.style.fontWeight = "bold";
-
-	  
     footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="color:${color}">${score}%</strong>`;
 
     container.appendChild(table);
@@ -945,65 +956,59 @@ window.addEventListener("DOMContentLoaded", () => {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }
 
-  async function fetchIPAPIData() {
-    try {
-      const res = await fetch("https://api.ipapi.is", { cache: "no-store" });
-      return await res.json();
-    } catch {
-      return null;
-    }
-  }
-
-  async function fetchTCPFingerprint() {
-    try {
-      const res = await fetch(CONFIG.tcpipAPI, { cache: "no-store" });
-      const json = await res.json();
-      return json.os_mismatch ?? null;
-    } catch {
-      return null;
-    }
-  }
-
-  async function measurePingRTT(url) {
-    const start = performance.now();
-    try {
-      const res = await fetch(url, { cache: "no-store" });
-      const json = await res.json();
-      window.detectedClientIP = json.ip;
-      return performance.now() - start;
-    } catch {
-      return null;
-    }
-  }
-
-  async function measureWebSocketRTT(url) {
+  async function detectWebRTCIP() {
     return new Promise(resolve => {
-      let ws;
-      let pingStart;
       let resolved = false;
-      const cleanUp = value => {
-        if (resolved) return;
-        resolved = true;
-        clearTimeout(timeout);
-        try { ws?.close(); } catch {}
-        resolve(value);
+      const candidates = new Set();
+      const rtc = new RTCPeerConnection({ iceServers: CONFIG.stunServers });
+
+      rtc.createDataChannel("dummy");
+      rtc.createOffer().then(offer => rtc.setLocalDescription(offer));
+
+      const timeout = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          resolve(null);
+        }
+      }, CONFIG.webrtcTimeout);
+
+      rtc.onicecandidate = event => {
+        if (!event.candidate || resolved) return;
+        const ipMatch = /([0-9]{1,3}(\\.[0-9]{1,3}){3})/.exec(event.candidate.candidate);
+        if (ipMatch) {
+          candidates.add(ipMatch[1]);
+        }
       };
-      const timeout = setTimeout(() => cleanUp(null), CONFIG.wsTimeout);
-      try {
-        ws = new WebSocket(url);
-      } catch {
-        return cleanUp(null);
-      }
-      ws.onopen = () => {
-        pingStart = performance.now();
-        setTimeout(() => {
-          try { ws.send("ping"); } catch {}
-        }, 300);
+
+      rtc.onicegatheringstatechange = () => {
+        if (rtc.iceGatheringState === "complete" && !resolved) {
+          resolved = true;
+          clearTimeout(timeout);
+          const valid = [...candidates].filter(ip => !ip.startsWith("192.") && !ip.startsWith("10.") && !ip.startsWith("172."));
+          resolve(valid[0] || null);
+        }
       };
-      ws.onmessage = () => cleanUp(performance.now() - pingStart);
-      ws.onerror = () => cleanUp(null);
     });
   }
+
+  async function detectWebRTCWrapper() {
+    IPStore.webrtc = await withTimeout(detectWebRTCIP(), CONFIG.webrtcTimeout);
+  }
+
+  function compareAllIPs() {
+    const { webrtc, ipapi, ping, tcp } = IPStore;
+    if (!webrtc) return { status: "🟢 正常", color: "#00ff22" };
+
+    const mismatch =
+      webrtc !== ipapi ||
+      webrtc !== ping ||
+      webrtc !== tcp;
+
+    return mismatch
+      ? { status: "🔴 检测到异常", color: "#fb0000" }
+      : { status: "🟢 正常", color: "#00ff22" };
+  }
+});
 
   async function fetchCountryFromIP(ip) {
     try {
@@ -1014,7 +1019,8 @@ window.addEventListener("DOMContentLoaded", () => {
       return "Unknown";
     }
   }
-  function calculateSpoofScore(ipapi, delayDiff, osMismatch, geoNote, cdnMismatch) {
+
+  function calculateSpoofScore(ipapi, delayDiff, osMismatch, geoNote, cdnMismatch, webrtcMismatch) {
     let score = 0;
 
     if (ipapi?.is_tor) score += 100;
@@ -1033,6 +1039,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if (osMismatch === true) score += 50;
     if (geoNote === "异常 ❌") score += 30;
     if (cdnMismatch === true) score += 50;
+    if (webrtcMismatch === true) score += 50;
 
     return {
       score: Math.min(score, 100),
@@ -1108,9 +1115,13 @@ window.addEventListener("DOMContentLoaded", () => {
     const osMismatch = await withTimeout(fetchTCPFingerprint(), 5000);
     await sleep(1000);
 
+    flashUpdate("📡 正在进行 WebRTC 出口检测…");
+    await detectWebRTCWrapper();
+    await sleep(1000);
+
     flashUpdate("🗺️ 正在进行 TLS 指纹识别…");
     const pingRTT = await withTimeout(measurePingRTT(CONFIG.pingURL), 5000);
-    const clientIP = window.detectedClientIP ?? null;
+    const clientIP = IPStore.ping ?? null;
     let countryCode = "Unknown";
     if (clientIP) {
       countryCode = await withTimeout(fetchCountryFromIP(clientIP), 5000);
@@ -1144,7 +1155,8 @@ window.addEventListener("DOMContentLoaded", () => {
     const ipapi = await withTimeout(fetchIPAPIData(), 5000);
     await sleep(1000);
 
-    const spoofResult = calculateSpoofScore(ipapi, delayDiff, osMismatch, geoNote, cdnMismatch);
+    const webrtcResult = compareAllIPs();
+    const spoofResult = calculateSpoofScore(ipapi, delayDiff, osMismatch, geoNote, cdnMismatch, webrtcResult.status.includes("🔴"));
 
     const items = [
       ["是否标记为 TOR", ipapi?.is_tor ? "🔴 已标记" : "🟢 未标记", ipapi?.is_tor ? "#fb0000" : "#00ff22"],
@@ -1157,7 +1169,8 @@ window.addEventListener("DOMContentLoaded", () => {
       ["指纹真实性", osMismatch === true ? "🔴 检测到异常" : osMismatch === false ? "🟢 正常" : "❓ 未识别", osMismatch === true ? "#fb0000" : "#00ff22"],
       ["链路延迟测量", delayDiff !== null && delayDiff > 90 ? "🔴 检测到异常" : "🟢 正常", delayDiff !== null && delayDiff > 90 ? "#fb0000" : "#00ff22"],
       ["地理位置延迟检测", geoNote === "异常 ❌" ? "🔴 检测到异常" : "🟢 正常", geoNote === "异常 ❌" ? "#fb0000" : "#00ff22"],
-      ["POP 最优入口检测", cdnMismatch ? "🔴 检测到异常" : "🟢 正常", cdnMismatch ? "#fb0000" : "#00ff22"]
+      ["POP 最优入口检测", cdnMismatch ? "🔴 检测到异常" : "🟢 正常", cdnMismatch ? "#fb0000" : "#00ff22"],
+      ["WebRTC 出口一致性", webrtcResult.status, webrtcResult.color]
     ];
 
     showResultHTML(items, spoofResult.score);
@@ -1173,8 +1186,8 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   detectBtn.addEventListener("click", runAnalysis);
-});
 </script>
+
 
 
 
