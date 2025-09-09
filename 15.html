@@ -858,6 +858,37 @@ window.addEventListener("DOMContentLoaded", () => {
     vpsRegion: "US"
   };
 
+  const GEO_BASELINE = {
+    "CA": { "US": { "expectedRTT": 64, "tolerance": 60 } },
+    "US": { "US": { "expectedRTT": 60, "tolerance": 60 } },
+    "CL": { "US": { "expectedRTT": 146, "tolerance": 60 } },
+    "BR": { "US": { "expectedRTT": 229, "tolerance": 100 } },
+    "MA": { "US": { "expectedRTT": 161, "tolerance": 100 } },
+    "ES": { "US": { "expectedRTT": 150, "tolerance": 100 } },
+    "GB": { "US": { "expectedRTT": 133, "tolerance": 60 } },
+    "FR": { "US": { "expectedRTT": 133, "tolerance": 60 } },
+    "NL": { "US": { "expectedRTT": 138, "tolerance": 60 } },
+    "NO": { "US": { "expectedRTT": 151, "tolerance": 100 } },
+    "CH": { "US": { "expectedRTT": 159, "tolerance": 100 } },
+    "DE": { "US": { "expectedRTT": 139, "tolerance": 60 } },
+    "AT": { "US": { "expectedRTT": 161, "tolerance": 100 } },
+    "RO": { "US": { "expectedRTT": 176, "tolerance": 100 } },
+    "TR": { "US": { "expectedRTT": 216, "tolerance": 100 } },
+    "CY": { "US": { "expectedRTT": 206, "tolerance": 100 } },
+    "IL": { "US": { "expectedRTT": 200, "tolerance": 100 } },
+    "AE": { "US": { "expectedRTT": 239, "tolerance": 100 } },
+    "IR": { "US": { "expectedRTT": 229, "tolerance": 100 } },
+    "IN": { "US": { "expectedRTT": 211, "tolerance": 100 } },
+    "BD": { "US": { "expectedRTT": 232, "tolerance": 100 } },
+    "TH": { "US": { "expectedRTT": 201, "tolerance": 100 } },
+    "SG": { "US": { "expectedRTT": 178, "tolerance": 100 } },
+    "KR": { "US": { "expectedRTT": 141, "tolerance": 60 } },
+    "JP": { "US": { "expectedRTT": 107, "tolerance": 60 } },
+    "AU": { "US": { "expectedRTT": 221, "tolerance": 100 } },
+    "TW": { "US": { "expectedRTT": 136, "tolerance": 60 } },
+    "HK": { "US": { "expectedRTT": 55, "tolerance": 70 } }
+  };
+
   const IPStore = {
     webrtc: null,
     ipapi: null,
@@ -945,65 +976,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
     resultContainer.innerHTML = "";
     resultContainer.appendChild(container);
-  }
-
-  async function detectWebRTCIP() {
-    return new Promise(resolve => {
-      let resolved = false;
-      const candidates = new Set();
-      const rtc = new RTCPeerConnection({ iceServers: CONFIG.stunServers });
-
-      rtc.createDataChannel("dummy");
-      rtc.createOffer().then(offer => rtc.setLocalDescription(offer));
-
-      const timeout = setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
-          resolve(null);
-        }
-      }, CONFIG.webrtcTimeout);
-
-      rtc.onicecandidate = event => {
-        if (!event.candidate || resolved) return;
-        const ipMatch = /([0-9]{1,3}(\\.[0-9]{1,3}){3})/.exec(event.candidate.candidate);
-        if (ipMatch) {
-          candidates.add(ipMatch[1]);
-        }
-      };
-
-      rtc.onicegatheringstatechange = () => {
-        if (rtc.iceGatheringState === "complete" && !resolved) {
-          resolved = true;
-          clearTimeout(timeout);
-          const valid = [...candidates].filter(ip =>
-            !ip.startsWith("192.") &&
-            !ip.startsWith("10.") &&
-            !ip.startsWith("172.") &&
-            !ip.startsWith("127.") &&
-            !ip.startsWith("0.")
-          );
-          resolve(valid[0] || null);
-        }
-      };
-    });
-  }
-
-  async function detectWebRTCWrapper() {
-    IPStore.webrtc = await withTimeout(detectWebRTCIP(), CONFIG.webrtcTimeout);
-  }
-
-  function compareAllIPs() {
-    const { webrtc, ipapi, ping, tcp } = IPStore;
-    if (!webrtc) return { status: "🟢 正常", color: "#00ff22" };
-
-    const mismatch =
-      webrtc !== ipapi ||
-      webrtc !== ping ||
-      webrtc !== tcp;
-
-    return mismatch
-      ? { status: "🔴 检测到异常", color: "#fb0000" }
-      : { status: "🟢 正常", color: "#00ff22" };
   }
   async function fetchIPAPIData() {
     try {
@@ -1213,7 +1185,14 @@ window.addEventListener("DOMContentLoaded", () => {
     await sleep(1000);
 
     const webrtcResult = compareAllIPs();
-    const spoofResult = calculateSpoofScore(ipapi, delayDiff, osMismatch, geoNote, cdnMismatch, webrtcResult.status.includes("🔴"));
+    const spoofResult = calculateSpoofScore(
+      ipapi,
+      delayDiff,
+      osMismatch,
+      geoNote,
+      cdnMismatch,
+      webrtcResult.status.includes("🔴")
+    );
 
     const items = [
       ["是否标记为 TOR", ipapi?.is_tor ? "🔴 已标记" : "🟢 未标记", ipapi?.is_tor ? "#fb0000" : "#00ff22"],
@@ -1245,7 +1224,6 @@ window.addEventListener("DOMContentLoaded", () => {
   detectBtn.addEventListener("click", runAnalysis);
 });
 </script>
-
 
 
 
