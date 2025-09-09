@@ -1186,7 +1186,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const osMismatch = await withTimeout(fetchTCPFingerprint(), 5000);
     await sleep(1000);
 
-    flashUpdate("📡 正在进行 WebRTC 出口检测…");
+    flashUpdate("📡 正在进行 WebRTC 泄露检测…");
     await detectWebRTCWrapper();
     await sleep(1000);
 
@@ -1248,7 +1248,7 @@ window.addEventListener("DOMContentLoaded", () => {
       ["链路延迟测量", delayDiff !== null && delayDiff > 90 ? "🔴 检测到异常" : "🟢 正常", delayDiff !== null && delayDiff > 90 ? "#fb0000" : "#00ff22"],
       ["地理位置延迟检测", geoNote === "异常 ❌" ? "🔴 检测到异常" : "🟢 正常", geoNote === "异常 ❌" ? "#fb0000" : "#00ff22"],
       ["POP 最优入口检测", cdnMismatch ? "🔴 检测到异常" : "🟢 正常", cdnMismatch ? "#fb0000" : "#00ff22"],
-      ["WebRTC 出口一致性", webrtcResult.status, webrtcResult.color]
+      ["WebRTC 是否泄露", webrtcResult.status, webrtcResult.color]
     ];
 
     showResultHTML(items, spoofResult.score);
