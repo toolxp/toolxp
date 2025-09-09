@@ -606,13 +606,7 @@ span#finalResult {
     }
   }
 
-/* 激活呼吸灯效果的类 */
-#resultContainer  {
-	width: 95%;
-	max-wudth: 875px;
-    animation: breathing 3s ease-in-out infinite;
-	transition: box-shadow 0.3s ease;
-}
+
 
 .submenu a {
     background: #0d111b;
@@ -885,12 +879,17 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function showResultHTML(items, score) {
     const container = document.createElement("div");
-    container.style.margin = "40px auto";
+    container.style.margin = "auto";
     container.style.borderRadius = "8px";
     container.style.padding = "20px";
-    container.style.background = "#1a1f2b";
     container.style.color = "#ddd";
-    container.style.fontSize = "16px";
+    container.style.fontSize = "17px";
+/* 激活呼吸灯效果的类 */
+	width: 95%;
+	max-wudth: 875px;
+    animation: breathing 3s ease-in-out infinite;
+	transition: box-shadow 0.3s ease;
+
 
     const table = document.createElement("table");
     table.style.width = "100%";
