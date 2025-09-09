@@ -894,7 +894,7 @@ window.addEventListener("DOMContentLoaded", () => {
 	container.style.width = "90%";
     container.style.animation = "breathing 3s ease-in-out infinite";
 	container.style.transition = "box-shadow 0.3s ease";
-
+    container.style.background = "#00000030";
 
     const table = document.createElement("table");
     table.style.width = "100%";
@@ -907,12 +907,14 @@ window.addEventListener("DOMContentLoaded", () => {
       left.textContent = label;
       left.style.padding = "8px";
       left.style.borderBottom = "1px solid #2c3b51";
+	  left.style.fontWeight = "bold";	
 
       const right = document.createElement("td");
       right.textContent = status;
       right.style.padding = "8px";
       right.style.borderBottom = "1px solid #2c3b51";
       right.style.color = color;
+	  right.style.fontWeight = "bold";	
 
       row.appendChild(left);
       row.appendChild(right);
