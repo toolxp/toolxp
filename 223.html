@@ -668,6 +668,12 @@ input[type="range"]::-webkit-slider-thumb {
   margin-top: -4px; /* ✅ 垂直居中关键 */
   cursor: pointer;
 }
+
+div#resultContainer {
+    width: 100%;
+    margin: auto;
+    max-width: 1050px;
+}	
 </style>
 
 
@@ -883,9 +889,9 @@ window.addEventListener("DOMContentLoaded", () => {
     container.style.borderRadius = "25px";
     container.style.padding = "20px";
     container.style.color = "#ddd";
-    container.style.fontSize = "17px";
+    container.style.fontSize = "19px";
 /* 激活呼吸灯效果的类 */
-	container.style.width = "95%";
+	container.style.width = "90%";
     container.style.animation = "breathing 3s ease-in-out infinite";
 	container.style.transition = "box-shadow 0.3s ease";
 
