@@ -699,6 +699,7 @@ await sleep(500);
   async function runAnalysis() {
     if (detectBtn.disabled) return;
     detectBtn.disabled = true;
+	resultContainer.innerHTML = ""; // ✅ 清空旧结果  
     loader.style.display = "block";
     await runAnalysisCore();
     loader.style.display = "none";
