@@ -1253,16 +1253,16 @@ async function fetchIPAPIData() {
     let score = 0;
 
     if (ipapi?.is_tor) score += 100;
-    if (ipapi?.is_vpn) score += 100;
+    if (ipapi?.is_vpn) score += 30;
     if (ipapi?.is_proxy) score += 30;
-    if (ipapi?.is_crawler) score += 15;
-    if (ipapi?.is_abuser) score += 15;
+    if (ipapi?.is_crawler) score += 10;
+    if (ipapi?.is_abuser) score += 10;
     if (ipapi?.is_datacenter) score += 10;
 
     const browserTZ = getBrowserTimezone();
     const ipTZ = ipapi?.timezone ?? null;
     const tzMismatch = ipTZ && ipTZ !== browserTZ;
-    if (tzMismatch) score += 10;
+    if (tzMismatch) score += 5;
 
     if (delayDiff !== null && delayDiff > 90) score += 20;
     if (osMismatch === true) score += 50;
