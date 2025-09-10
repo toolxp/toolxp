@@ -612,13 +612,14 @@ async function fetchIPAPIData() {
     flashUpdate("⏳ 正在初始化检测，请稍候…");
     await sleep(500);
 
-    flashUpdate("🌐 正在查询 IP 信誉数据库…");
-    const ipapi = await withTimeout(fetchIPAPIData(), 5000);
-    if (!ipapi?.ip) {
-      flashUpdate("❌ 网络连接不稳定，检测被中断");
-      return;
-    }
-    await sleep(500);
+flashUpdate("🌐 正在查询 IP 信誉数据库…");
+const ipapi = await fetchIPAPIData(); // ✅ 不加 withTimeout
+if (!ipapi?.ip) {
+  flashUpdate("❌ 网络连接不稳定，检测被中断");
+  return;
+}
+await sleep(500);
+
 
     flashUpdate("📦 正在进行 TCP/IP 指纹识别…");
     const osMismatch = await withTimeout(fetchTCPFingerprint(), 5000);
