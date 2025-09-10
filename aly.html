@@ -1037,7 +1037,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
   async function fetchIPAPIData() {
     const workerList = [
-      "https://api-ipapi.zhuyou.workers.dev"
+      "https://uncloak1.huangjie.ggff.net",
+      "https://uncloak2.huangjie.ggff.net",
+      "https://uncloak3.huangjie.ggff.net"
     ];
 
     for (let i = 0; i < workerList.length; i++) {
@@ -1226,7 +1228,7 @@ window.addEventListener("DOMContentLoaded", () => {
     flashUpdate("⏳ 正在初始化检测，请稍候…");
     await sleep(500);
 
-    flashUpdate("🌐 正在获取 IP 与地理信息…");
+    flashUpdate("🌐 正在检测 IP 信誉开源数据库…");
     const ipapi = await withTimeout(fetchIPAPIData(), 5000);
     if (!ipapi?.ip) {
       flashUpdate("❌ 无法获取 IP 信息，检测终止");
@@ -1251,7 +1253,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if (wsRTT === null) flashUpdate("⚠️ WebSocket 测量失败，跳过延迟分析");
     await sleep(500);
 
-    flashUpdate("📡 正在进行 POP 最优入口检测…");
+    flashUpdate("📡 正在进行全球 POP 入口检测…");
     const cdnNoteRaw = await withTimeout(runCDNTriangleMeasurement(ipapi.ip), 15000);
     const cdnMismatch = cdnNoteRaw?.includes("❌");
     await sleep(500);
