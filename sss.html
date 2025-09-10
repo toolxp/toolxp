@@ -1363,15 +1363,21 @@ await sleep(500);
     showResultHTML(items, spoofResult.score);
   }
 
-  async function runAnalysis() {
-    if (detectBtn.disabled) return;
-    detectBtn.disabled = true;
-	resultContainer.innerHTML = "";   
-    loader.style.display = "block";
-    await runAnalysisCore();
-    loader.style.display = "none";
-    detectBtn.disabled = false;
-  }
+async function runAnalysis() {
+  if (detectBtn.disabled) return;
+  detectBtn.disabled = true;
+  detectBtn.textContent = "检测中……"; // ✅ 设置按钮文字
+
+  resultContainer.innerHTML = ""; // 清空旧结果
+  loader.style.display = "block";
+
+  await runAnalysisCore();
+
+  loader.style.display = "none";
+  detectBtn.disabled = false;
+  detectBtn.textContent = "开始检测"; // ✅ 恢复按钮文字
+}
+
 
   detectBtn.addEventListener("click", runAnalysis);
 });
