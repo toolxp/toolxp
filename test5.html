@@ -675,7 +675,7 @@ await sleep(500);
       ["指纹真实性", osMismatch === true ? "🔴 检测到异常" : osMismatch === false ? "🟢 正常" : "❓ 未识别", osMismatch === true ? "#fb0000" : "#00ff22"],
       ["链路延迟测量", delayDiff !== null && delayDiff > 90 ? "🔴 检测到异常" : "🟢 正常", delayDiff !== null && delayDiff > 90 ? "#fb0000" : "#00ff22"],
       ["地理位置延迟检测", geoNote === "异常 ❌" ? "🔴 检测到异常" : geoNote.includes("❓") ? "❓ 未识别" : "🟢 正常", geoNote === "异常 ❌" ? "#fb0000" : geoNote.includes("❓") ? "#fffb00" : "#00ff22"],
-      ["POP 最优入口检测", cdnNoteRaw?.includes("❌") ? "🔴 检测到异常" : cdnNoteRaw ?? "❓ 未识别", cdnNoteRaw?.includes("❌") ? "#fb0000" : "#00ff22"],
+      ["POP 最优入口检测", cdnNoteRaw ?? "❓ 未识别", cdnNoteRaw?.includes("🔴") ? "#fb0000" : "#00ff22"]
       ["WebRTC 是否泄露", webrtcResult.status, webrtcResult.color]
     ];
 
