@@ -1036,12 +1036,29 @@ window.addEventListener("DOMContentLoaded", () => {
       : { status: "🟢 正常", color: "#00ff22" };
   }
 
-  async function fetchIPAPIData() {
-    const workerList = [
-      "https://uncloak1.huangjie.ggff.net",
-      "https://uncloak2.huangjie.ggff.net",
-      "https://uncloak3.huangjie.ggff.net"
-    ];
+async function fetchIPAPIData() {
+  const workerList = [
+    "https://api-ipapi1.zhuyou.workers.dev",
+    "https://api-ipapi2.zhuyou.workers.dev",
+    "https://api-ipapi3.zhuyou.workers.dev"
+  ];
+
+  for (const url of workerList) {
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      const raw = await res.json();
+      if (raw?.ip) {
+        IPStore.ipapiData = raw;
+        IPStore.ipapi = raw.ip;
+        return raw;
+      }
+    } catch {}
+    await sleep(300);
+  }
+
+  return null;
+}
+
 
     for (let i = 0; i < workerList.length; i++) {
       const url = workerList[Math.floor(Math.random() * workerList.length)];
