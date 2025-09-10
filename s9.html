@@ -845,7 +845,6 @@ window.addEventListener("DOMContentLoaded", () => {
     pingURL: "https://us.cti.pp.ua/ping",
     wsURL: "wss://us.cti.pp.ua/ws",
     tcpipAPI: "https://tcp.cti.pp.ua/classify",
-    ipapiURL: "https://api.ipapi.is",
     wsTimeout: 3000,
     webrtcTimeout: 5000,
     stunServers: [
@@ -1005,7 +1004,8 @@ window.addEventListener("DOMContentLoaded", () => {
           resolved = true;
           clearTimeout(timeout);
           const valid = [...candidates].filter(ip =>
-            ip && !ip.startsWith("192.") &&
+            ip &&
+            !ip.startsWith("192.") &&
             !ip.startsWith("10.") &&
             !ip.startsWith("172.") &&
             !ip.startsWith("127.") &&
@@ -1050,29 +1050,29 @@ window.addEventListener("DOMContentLoaded", () => {
         if (raw?.ip) {
           const filtered = {
             ip: raw.ip,
-            timezone: raw.location?.timezone,
-            country_code: raw.location?.country_code,
-            country_name: raw.location?.country,
-            region_name: raw.location?.state,
-            city: raw.location?.city,
-            latitude: raw.location?.latitude,
-            longitude: raw.location?.longitude,
-            continent: raw.location?.continent,
-            zip: raw.location?.zip,
-            is_eu_member: raw.location?.is_eu_member,
-            calling_code: raw.location?.calling_code,
-            currency_code: raw.location?.currency_code,
-            local_time: raw.location?.local_time,
-            local_time_unix: raw.location?.local_time_unix,
-            is_dst: raw.location?.is_dst,
-            asn: raw.asn?.asn,
-            org: raw.asn?.org,
-            is_vpn: raw.is_vpn,
-            is_proxy: raw.is_proxy,
-            is_tor: raw.is_tor,
-            is_abuser: raw.is_abuser,
-            is_crawler: raw.is_crawler,
-            is_datacenter: raw.is_datacenter
+            timezone: raw.location?.timezone ?? raw.timezone,
+            country_code: raw.location?.country_code ?? raw.asn?.country?.toUpperCase() ?? "Unknown",
+            country_name: raw.location?.country ?? "Unknown",
+            region_name: raw.location?.state ?? "",
+            city: raw.location?.city ?? "",
+            latitude: raw.location?.latitude ?? null,
+            longitude: raw.location?.longitude ?? null,
+            continent: raw.location?.continent ?? "",
+            zip: raw.location?.zip ?? "",
+            is_eu_member: raw.location?.is_eu_member ?? false,
+            calling_code: raw.location?.calling_code ?? "",
+            currency_code: raw.location?.currency_code ?? "",
+            local_time: raw.location?.local_time ?? "",
+            local_time_unix: raw.location?.local_time_unix ?? null,
+            is_dst: raw.location?.is_dst ?? false,
+            asn: raw.asn?.asn ?? null,
+            org: raw.asn?.org ?? "",
+            is_vpn: raw.is_vpn ?? false,
+            is_proxy: raw.is_proxy ?? false,
+            is_tor: raw.is_tor ?? false,
+            is_abuser: raw.is_abuser ?? false,
+            is_crawler: raw.is_crawler ?? false,
+            is_datacenter: raw.is_datacenter ?? false
           };
           IPStore.ipapiData = filtered;
           IPStore.ipapi = filtered.ip;
@@ -1086,6 +1086,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     return null;
   }
+
   async function fetchTCPFingerprint() {
     try {
       const res = await fetch(CONFIG.tcpipAPI, { cache: "no-store" });
@@ -1138,9 +1139,9 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  async function runCDNTriangleMeasurement(ip) {
-    const countryCode = IPStore.ipapiData?.country_code ?? "Unknown";
-    if (countryCode === "CN") {
+  async function runCDNTriangleMeasurement(visitorIP) {
+    const visitorCountryCode = IPStore.ipapiData?.country_code ?? "Unknown";
+    if (visitorCountryCode === "CN") {
       return "📡 CDN 三角测量: ✅ 已识别为大陆用户，无需测点判断 ";
     }
 
@@ -1171,9 +1172,9 @@ window.addEventListener("DOMContentLoaded", () => {
           .then(res => res.json())
           .then(json => ({
             label,
-            rtt: json.rtt || null,
-            ip: json.ip || "N/A",
-            pop_code: json.pop_code || "Unknown"
+            rtt: json.rtt ?? null,
+            ip: json.ip ?? "N/A",
+            pop_code: json.pop_code ?? "Unknown"
           }))
           .catch(() => ({
             label,
@@ -1190,6 +1191,14 @@ window.addEventListener("DOMContentLoaded", () => {
     if (!valid.length) return "📡 CDN 三角测量: 检测失败 ❌";
 
     const best = valid.sort((a, b) => a.rtt - b.rtt)[0];
+    const bestIP = best?.ip ?? null;
+
+    // 如果 POP 返回的 IP 无效，则跳过判断
+    if (!bestIP || bestIP === "FetchError" || bestIP === "N/A") {
+      return `📡 CDN 三角测量: 最优入口 ${best.label}（${best.pop_code}）无法识别 IP`;
+    }
+
+    // 使用访客归属地与 POP IP 的归属地对比
     const bestCountryCode = IPStore.ipapiData?.country_code ?? "Unknown";
     const match = best.label === bestCountryCode;
 
@@ -1228,7 +1237,7 @@ window.addEventListener("DOMContentLoaded", () => {
     flashUpdate("⏳ 正在初始化检测，请稍候…");
     await sleep(500);
 
-    flashUpdate("🌐 正在检测 IP 信誉开源数据库…");
+    flashUpdate("🌐 正在获取 IP 与地理信息…");
     const ipapi = await withTimeout(fetchIPAPIData(), 5000);
     if (!ipapi?.ip) {
       flashUpdate("❌ 无法获取 IP 信息，检测终止");
@@ -1253,7 +1262,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if (wsRTT === null) flashUpdate("⚠️ WebSocket 测量失败，跳过延迟分析");
     await sleep(500);
 
-    flashUpdate("📡 正在进行全球 POP 入口检测…");
+    flashUpdate("📡 正在进行 POP 最优入口检测…");
     const cdnNoteRaw = await withTimeout(runCDNTriangleMeasurement(ipapi.ip), 15000);
     const cdnMismatch = cdnNoteRaw?.includes("❌");
     await sleep(500);
@@ -1263,7 +1272,7 @@ window.addEventListener("DOMContentLoaded", () => {
     let geoNote = "数据库样本不足 ❓";
     const countryCode = ipapi?.country_code ?? "Unknown";
     const ref = GEO_BASELINE?.[countryCode]?.[CONFIG.vpsRegion];
-    if (ref && pingRTT && wsRTT) {
+    if (ref && typeof pingRTT === "number" && typeof wsRTT === "number") {
       const { expectedRTT, tolerance } = ref;
       const httpExceeds = pingRTT > expectedRTT + tolerance;
       const wsExceeds = wsRTT > expectedRTT + tolerance;
