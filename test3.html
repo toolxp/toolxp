@@ -549,15 +549,10 @@ async function runCDNTriangleMeasurement(visitorIP) {
         .then(json => ({
           label,
           rtt: json.rtt ?? null,
-          ip: json.ip ?? "N/A",
+          pop_label: json.pop_label ?? "Unknown",
           pop_code: json.pop_code ?? "Unknown"
         }))
-        .catch(() => ({
-          label,
-          rtt: null,
-          ip: "FetchError",
-          pop_code: "FetchError"
-        })),
+        .catch(() => null),
       3000
     )
   );
@@ -567,27 +562,11 @@ async function runCDNTriangleMeasurement(visitorIP) {
   if (!valid.length) return "📡 CDN 三角测量: 检测失败 ❌";
 
   const best = valid.sort((a, b) => a.rtt - b.rtt)[0];
-  const bestIP = best?.ip ?? null;
-  if (!bestIP || bestIP === "FetchError" || bestIP === "N/A") {
-    return `📡 CDN 三角测量: 最优入口 ${best.label}（${best.pop_code}）无法识别 IP`;
-  }
-
-  const bestCountryCode = await fetchCountryFromIP(bestIP);
-
-
-// ✅ 调试输出
-console.log("POP IP:", best.ip);
-console.log("POP label:", best.label);
-console.log("IPInfo country:", bestCountryCode);
-
-
-
-	
-  const match = best.label === bestCountryCode;
+  const match = best.pop_label === visitorCountryCode;
 
   return match
-    ? `📡 CDN 三角测量: ✅ 最优入口 ${best.label}（${best.pop_code}）与 IP归属 ${bestCountryCode} 一致`
-    : `📡 CDN 三角测量: ❌ 最优入口 ${best.label}（${best.pop_code}）与 IP归属 ${bestCountryCode} 不符`;
+    ? `📡 CDN 三角测量: ✅ 最优入口 ${best.pop_label}（${best.pop_code}）与 IP归属 ${visitorCountryCode} 一致`
+    : `📡 CDN 三角测量: ❌ 最优入口 ${best.pop_label}（${best.pop_code}）与 IP归属 ${visitorCountryCode} 不符`;
 }
 
 
