@@ -819,6 +819,9 @@ div#resultContainer {
 window.addEventListener("DOMContentLoaded", () => {
   const statusText = document.getElementById("statusText");
   const finalResult = document.getElementById("finalResult");
+  const detectBtn = document.getElementById("detectBtn");
+  const resultContainer = document.getElementById("resultContainer");
+
   const loader = document.getElementById("engine-loader") || (() => {
     const el = document.createElement("div");
     el.id = "engine-loader";
@@ -838,14 +841,10 @@ window.addEventListener("DOMContentLoaded", () => {
     return el;
   })();
 
-  const detectBtn = document.getElementById("detectBtn");
-  const resultContainer = document.getElementById("resultContainer");
-
   const CONFIG = {
     pingURL: "https://us.cti.pp.ua/ping",
     wsURL: "wss://us.cti.pp.ua/ws",
     tcpipAPI: "https://tcp.cti.pp.ua/classify",
-    geoWorkerAPI: "https://ipip.cti.pp.ua?ip=",
     ipapiURL: "https://api.ipapi.is",
     wsTimeout: 3000,
     webrtcTimeout: 5000,
@@ -857,41 +856,41 @@ window.addEventListener("DOMContentLoaded", () => {
     vpsRegion: "US"
   };
 
-const GEO_BASELINE = {
-  "AE": { "US": { expectedRTT: 239, tolerance: 100 } },
-  "AT": { "US": { expectedRTT: 161, tolerance: 100 } },
-  "AU": { "US": { expectedRTT: 221, tolerance: 100 } },
-  "BD": { "US": { expectedRTT: 232, tolerance: 100 } },
-  "BR": { "US": { expectedRTT: 229, tolerance: 100 } },
-  "CA": { "US": { expectedRTT: 64, tolerance: 60 } },
-  "CH": { "US": { expectedRTT: 159, tolerance: 100 } },
-  "CL": { "US": { expectedRTT: 146, tolerance: 60 } },
-  "CY": { "US": { expectedRTT: 206, tolerance: 100 } },
-  "DE": { "US": { expectedRTT: 139, tolerance: 60 } },
-  "ES": { "US": { expectedRTT: 150, tolerance: 100 } },
-  "FR": { "US": { expectedRTT: 133, tolerance: 60 } },
-  "GB": { "US": { expectedRTT: 133, tolerance: 60 } },
-  "HK": { "US": { expectedRTT: 55, tolerance: 70 } },
-  "IL": { "US": { expectedRTT: 200, tolerance: 100 } },
-  "IN": { "US": { expectedRTT: 211, tolerance: 100 } },
-  "IR": { "US": { expectedRTT: 229, tolerance: 100 } },
-  "JP": { "US": { expectedRTT: 107, tolerance: 60 } },
-  "KR": { "US": { expectedRTT: 141, tolerance: 60 } },
-  "MA": { "US": { expectedRTT: 161, tolerance: 100 } },
-  "NL": { "US": { expectedRTT: 138, tolerance: 60 } },
-  "NO": { "US": { expectedRTT: 151, tolerance: 100 } },
-  "RO": { "US": { expectedRTT: 176, tolerance: 100 } },
-  "SG": { "US": { expectedRTT: 178, tolerance: 100 } },
-  "TH": { "US": { expectedRTT: 201, tolerance: 100 } },
-  "TR": { "US": { expectedRTT: 216, tolerance: 100 } },
-  "TW": { "US": { expectedRTT: 136, tolerance: 60 } },
-  "US": { "US": { expectedRTT: 60, tolerance: 60 } }
-};
-
+  const GEO_BASELINE = {
+    "AE": { "US": { expectedRTT: 239, tolerance: 100 } },
+    "AT": { "US": { expectedRTT: 161, tolerance: 100 } },
+    "AU": { "US": { expectedRTT: 221, tolerance: 100 } },
+    "BD": { "US": { expectedRTT: 232, tolerance: 100 } },
+    "BR": { "US": { expectedRTT: 229, tolerance: 100 } },
+    "CA": { "US": { expectedRTT: 64, tolerance: 60 } },
+    "CH": { "US": { expectedRTT: 159, tolerance: 100 } },
+    "CL": { "US": { expectedRTT: 146, tolerance: 60 } },
+    "CY": { "US": { expectedRTT: 206, tolerance: 100 } },
+    "DE": { "US": { expectedRTT: 139, tolerance: 60 } },
+    "ES": { "US": { expectedRTT: 150, tolerance: 100 } },
+    "FR": { "US": { expectedRTT: 133, tolerance: 60 } },
+    "GB": { "US": { expectedRTT: 133, tolerance: 60 } },
+    "HK": { "US": { expectedRTT: 55, tolerance: 70 } },
+    "IL": { "US": { expectedRTT: 200, tolerance: 100 } },
+    "IN": { "US": { expectedRTT: 211, tolerance: 100 } },
+    "IR": { "US": { expectedRTT: 229, tolerance: 100 } },
+    "JP": { "US": { expectedRTT: 107, tolerance: 60 } },
+    "KR": { "US": { expectedRTT: 141, tolerance: 60 } },
+    "MA": { "US": { expectedRTT: 161, tolerance: 100 } },
+    "NL": { "US": { expectedRTT: 138, tolerance: 60 } },
+    "NO": { "US": { expectedRTT: 151, tolerance: 100 } },
+    "RO": { "US": { expectedRTT: 176, tolerance: 100 } },
+    "SG": { "US": { expectedRTT: 178, tolerance: 100 } },
+    "TH": { "US": { expectedRTT: 201, tolerance: 100 } },
+    "TR": { "US": { expectedRTT: 216, tolerance: 100 } },
+    "TW": { "US": { expectedRTT: 136, tolerance: 60 } },
+    "US": { "US": { expectedRTT: 60, tolerance: 60 } }
+  };
 
   const IPStore = {
     webrtc: null,
     ipapi: null,
+    ipapiData: null,
     ping: null,
     tcp: null
   };
@@ -922,7 +921,6 @@ const GEO_BASELINE = {
       return "Unknown";
     }
   }
-
   function showResultHTML(items, score) {
     const container = document.createElement("div");
     container.style.margin = "auto";
@@ -1007,7 +1005,7 @@ const GEO_BASELINE = {
           resolved = true;
           clearTimeout(timeout);
           const valid = [...candidates].filter(ip =>
-            !ip.startsWith("192.") &&
+            ip && !ip.startsWith("192.") &&
             !ip.startsWith("10.") &&
             !ip.startsWith("172.") &&
             !ip.startsWith("127.") &&
@@ -1024,42 +1022,68 @@ const GEO_BASELINE = {
   }
 
   function compareAllIPs() {
-    const { webrtc, ipapi, ping, tcp } = IPStore;
-    if (!webrtc) return { status: "🟢 正常", color: "#00ff22" };
+    const { webrtc, tcp } = IPStore;
+    const ipapi = IPStore.ipapiData?.ip ?? null;
+    if (!webrtc || !ipapi) return { status: "🟢 正常", color: "#00ff22" };
 
     const mismatch =
       webrtc !== ipapi ||
-      webrtc !== ping ||
       webrtc !== tcp;
 
     return mismatch
       ? { status: "🔴 检测到异常", color: "#fb0000" }
       : { status: "🟢 正常", color: "#00ff22" };
   }
-async function fetchIPAPIData() {
-  const workerList = [
-    "https://api-ipapi.zhuyou.workers.dev"
-  ];
 
-  for (let i = 0; i < workerList.length; i++) {
-    const url = workerList[Math.floor(Math.random() * workerList.length)];
-    try {
-      const res = await fetch(url, { cache: "no-store" });
-      const json = await res.json();
-      if (json?.ip) {
-        IPStore.ipapi = json.ip;
-        return json;
+  async function fetchIPAPIData() {
+    const workerList = [
+      "https://api-ipapi.zhuyou.workers.dev"
+    ];
+
+    for (let i = 0; i < workerList.length; i++) {
+      const url = workerList[Math.floor(Math.random() * workerList.length)];
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        const raw = await res.json();
+        if (raw?.ip) {
+          const filtered = {
+            ip: raw.ip,
+            timezone: raw.location?.timezone,
+            country_code: raw.location?.country_code,
+            country_name: raw.location?.country,
+            region_name: raw.location?.state,
+            city: raw.location?.city,
+            latitude: raw.location?.latitude,
+            longitude: raw.location?.longitude,
+            continent: raw.location?.continent,
+            zip: raw.location?.zip,
+            is_eu_member: raw.location?.is_eu_member,
+            calling_code: raw.location?.calling_code,
+            currency_code: raw.location?.currency_code,
+            local_time: raw.location?.local_time,
+            local_time_unix: raw.location?.local_time_unix,
+            is_dst: raw.location?.is_dst,
+            asn: raw.asn?.asn,
+            org: raw.asn?.org,
+            is_vpn: raw.is_vpn,
+            is_proxy: raw.is_proxy,
+            is_tor: raw.is_tor,
+            is_abuser: raw.is_abuser,
+            is_crawler: raw.is_crawler,
+            is_datacenter: raw.is_datacenter
+          };
+          IPStore.ipapiData = filtered;
+          IPStore.ipapi = filtered.ip;
+          return filtered;
+        }
+      } catch (e) {
+        // 可选：console.warn(`Worker ${url} 请求失败`);
       }
-    } catch (e) {
-      // 可选：console.warn(`Worker ${url} 请求失败`);
+      await sleep(300);
     }
-    await sleep(300); // 可选：避免瞬时并发
+
+    return null;
   }
-
-  return null;
-}
-
-
   async function fetchTCPFingerprint() {
     try {
       const res = await fetch(CONFIG.tcpipAPI, { cache: "no-store" });
@@ -1076,7 +1100,6 @@ async function fetchIPAPIData() {
     try {
       const res = await fetch(url, { cache: "no-store" });
       const json = await res.json();
-      IPStore.ping = json.ip;
       return performance.now() - start;
     } catch {
       return null;
@@ -1109,21 +1132,12 @@ async function fetchIPAPIData() {
       };
       ws.onmessage = () => cleanUp(performance.now() - pingStart);
       ws.onerror = () => cleanUp(null);
+      ws.onclose = () => cleanUp(null);
     });
   }
 
-  async function fetchCountryFromIP(ip) {
-    try {
-      const res = await fetch(CONFIG.geoWorkerAPI + ip);
-      const data = await res.json();
-      return data.country_code || "Unknown";
-    } catch {
-      return "Unknown";
-    }
-  }
-
   async function runCDNTriangleMeasurement(ip) {
-    const countryCode = await fetchCountryFromIP(ip);
+    const countryCode = IPStore.ipapiData?.country_code ?? "Unknown";
     if (countryCode === "CN") {
       return "📡 CDN 三角测量: ✅ 已识别为大陆用户，无需测点判断 ";
     }
@@ -1170,18 +1184,17 @@ async function fetchIPAPIData() {
     );
 
     const results = await Promise.all(fetchTasks);
-    const valid = results.filter(r => typeof r.rtt === "number");
+    const valid = results.filter(r => r && typeof r.rtt === "number");
     if (!valid.length) return "📡 CDN 三角测量: 检测失败 ❌";
 
     const best = valid.sort((a, b) => a.rtt - b.rtt)[0];
-    const bestCountryCode = await fetchCountryFromIP(best.ip);
+    const bestCountryCode = IPStore.ipapiData?.country_code ?? "Unknown";
     const match = best.label === bestCountryCode;
 
     return match
       ? `📡 CDN 三角测量: ✅ 最优入口 ${best.label}（${best.pop_code}）与 IP归属 ${bestCountryCode} 一致`
       : `📡 CDN 三角测量: ❌ 最优入口 ${best.label}（${best.pop_code}）与 IP归属 ${bestCountryCode} 不符`;
   }
-
   function calculateSpoofScore(ipapi, delayDiff, osMismatch, geoNote, cdnMismatch, webrtcMismatch) {
     let score = 0;
 
@@ -1193,7 +1206,7 @@ async function fetchIPAPIData() {
     if (ipapi?.is_datacenter) score += 10;
 
     const browserTZ = getBrowserTimezone();
-    const ipTZ = ipapi?.location?.timezone ?? null;
+    const ipTZ = ipapi?.timezone ?? null;
     const tzMismatch = ipTZ && ipTZ !== browserTZ;
     if (tzMismatch) score += 10;
 
@@ -1208,42 +1221,45 @@ async function fetchIPAPIData() {
       tzMismatch
     };
   }
+
   async function runAnalysisCore() {
     flashUpdate("⏳ 正在初始化检测，请稍候…");
-    await sleep(1000);
+    await sleep(500);
+
+    flashUpdate("🌐 正在获取 IP 与地理信息…");
+    const ipapi = await withTimeout(fetchIPAPIData(), 5000);
+    if (!ipapi?.ip) {
+      flashUpdate("❌ 无法获取 IP 信息，检测终止");
+      return;
+    }
+    await sleep(500);
 
     flashUpdate("📦 正在进行 TCP/IP 指纹识别…");
     const osMismatch = await withTimeout(fetchTCPFingerprint(), 5000);
-    await sleep(1000);
+    await sleep(500);
 
     flashUpdate("📡 正在进行 WebRTC 泄露检测…");
     await detectWebRTCWrapper();
-    await sleep(1000);
+    await sleep(500);
 
-    flashUpdate("🗺️ 正在进行 TLS 指纹识别…");
+    flashUpdate("🗺️ 正在进行链路延迟测量…");
     const pingRTT = await withTimeout(measurePingRTT(CONFIG.pingURL), 5000);
-    const clientIP = IPStore.ping ?? null;
-    let countryCode = "Unknown";
-    if (clientIP) {
-      countryCode = await withTimeout(fetchCountryFromIP(clientIP), 5000);
-    }
-    await sleep(1000);
+    if (pingRTT === null) flashUpdate("⚠️ Ping 测量失败，跳过延迟分析");
+    await sleep(500);
 
-    flashUpdate(`🛰️ 与 ${countryCode} 主节点的平均 Ping 延迟为 ${pingRTT}ms，正在分析链路质量…`);
-    await sleep(2000);
-
-    flashUpdate("🌐 正在进行 链路延迟测量…");
     const wsRTT = await withTimeout(measureWebSocketRTT(CONFIG.wsURL), 8000);
-    await sleep(1000);
+    if (wsRTT === null) flashUpdate("⚠️ WebSocket 测量失败，跳过延迟分析");
+    await sleep(500);
 
     flashUpdate("📡 正在进行 POP 最优入口检测…");
-    const cdnNoteRaw = await withTimeout(runCDNTriangleMeasurement(clientIP), 15000);
-    await sleep(1000);
+    const cdnNoteRaw = await withTimeout(runCDNTriangleMeasurement(ipapi.ip), 15000);
+    const cdnMismatch = cdnNoteRaw?.includes("❌");
+    await sleep(500);
 
     const delayDiff = pingRTT && wsRTT ? Math.abs(pingRTT - wsRTT) : null;
-    const cdnMismatch = cdnNoteRaw?.includes("❌");
 
     let geoNote = "数据库样本不足 ❓";
+    const countryCode = ipapi?.country_code ?? "Unknown";
     const ref = GEO_BASELINE?.[countryCode]?.[CONFIG.vpsRegion];
     if (ref && pingRTT && wsRTT) {
       const { expectedRTT, tolerance } = ref;
@@ -1251,10 +1267,6 @@ async function fetchIPAPIData() {
       const wsExceeds = wsRTT > expectedRTT + tolerance;
       geoNote = (httpExceeds || wsExceeds) ? "异常 ❌" : "正常 ✅";
     }
-
-    flashUpdate("🔍 正在分析 IP 情报数据库…");
-    const ipapi = await withTimeout(fetchIPAPIData(), 5000);
-    await sleep(1000);
 
     const webrtcResult = compareAllIPs();
     const spoofResult = calculateSpoofScore(
@@ -1276,8 +1288,8 @@ async function fetchIPAPIData() {
       ["时区是否一致", spoofResult.tzMismatch ? "🔴 检测到异常" : "🟢 正常", spoofResult.tzMismatch ? "#fb0000" : "#00ff22"],
       ["指纹真实性", osMismatch === true ? "🔴 检测到异常" : osMismatch === false ? "🟢 正常" : "❓ 未识别", osMismatch === true ? "#fb0000" : "#00ff22"],
       ["链路延迟测量", delayDiff !== null && delayDiff > 90 ? "🔴 检测到异常" : "🟢 正常", delayDiff !== null && delayDiff > 90 ? "#fb0000" : "#00ff22"],
-      ["地理位置延迟检测", geoNote === "异常 ❌" ? "🔴 检测到异常" : "🟢 正常", geoNote === "异常 ❌" ? "#fb0000" : "#00ff22"],
-      ["POP 最优入口检测", cdnMismatch ? "🔴 检测到异常" : "🟢 正常", cdnMismatch ? "#fb0000" : "#00ff22"],
+      ["地理位置延迟检测", geoNote === "异常 ❌" ? "🔴 检测到异常" : geoNote.includes("❓") ? "❓ 未识别" : "🟢 正常", geoNote === "异常 ❌" ? "#fb0000" : geoNote.includes("❓") ? "#fffb00" : "#00ff22"],
+      ["POP 最优入口检测", cdnMismatch ? "🔴 检测到异常" : cdnNoteRaw ?? "❓ 未识别", cdnMismatch ? "#fb0000" : "#00ff22"],
       ["WebRTC 是否泄露", webrtcResult.status, webrtcResult.color]
     ];
 
