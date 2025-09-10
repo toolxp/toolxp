@@ -1155,7 +1155,8 @@ async function fetchIPAPIData() {
   async function runCDNTriangleMeasurement(visitorIP) {
     const visitorCountryCode = IPStore.ipapiData?.country_code ?? "Unknown";
     if (visitorCountryCode === "CN") {
-      return "📡 CDN 三角测量: ✅ 已识别为大陆用户，无需测点判断 ";
+		// 大陆用户跳过检测
+      return "🟢 正常 ";
     }
 
     const endpoints = {
@@ -1251,7 +1252,8 @@ async function fetchIPAPIData() {
     flashUpdate("🌐 正在查询 IP 信誉数据库…");
     const ipapi = await withTimeout(fetchIPAPIData(), 5000);
     if (!ipapi?.ip) {
-      flashUpdate("❌ 无法获取 IP 信息，检测终止");
+		// 获取IP失败，有可能是用户网络问题，或者worker失败
+      flashUpdate("❌ 网络连接不稳定，检测被中断");
       return;
     }
     await sleep(500);
@@ -1280,20 +1282,26 @@ async function fetchIPAPIData() {
 
     const delayDiff = pingRTT && wsRTT ? Math.abs(pingRTT - wsRTT) : null;
 
-    let geoNote = "❓ 未识别";
-    const countryCode = ipapi?.country_code ?? "Unknown";
-    const ref = GEO_BASELINE?.[countryCode]?.[CONFIG.vpsRegion];
+let geoNote = "❓ 未识别";
+const countryCode = ipapi?.country_code ?? "Unknown";
 
-    if (!ref) {
-      geoNote = `❓ 未识别（无 ${countryCode} → ${CONFIG.vpsRegion} 样本）`;
-    } else if (typeof pingRTT !== "number" || typeof wsRTT !== "number") {
-      geoNote = "❓ 未识别（链路测量失败）";
-    } else {
-      const { expectedRTT, tolerance } = ref;
-      const httpExceeds = pingRTT > expectedRTT + tolerance;
-      const wsExceeds = wsRTT > expectedRTT + tolerance;
-      geoNote = (httpExceeds || wsExceeds) ? "异常 ❌" : "正常 ✅";
-    }
+if (countryCode === "CN") {
+	// 大陆用户跳过检测
+  geoNote = "🟢 正常";
+} else {
+  const ref = GEO_BASELINE?.[countryCode]?.[CONFIG.vpsRegion];
+  if (!ref) {
+    geoNote = `❓ 未识别（无 ${countryCode} → ${CONFIG.vpsRegion} 样本）`;
+  } else if (typeof pingRTT !== "number" || typeof wsRTT !== "number") {
+    geoNote = "❓ 未识别（链路测量失败）";
+  } else {
+    const { expectedRTT, tolerance } = ref;
+    const httpExceeds = pingRTT > expectedRTT + tolerance;
+    const wsExceeds = wsRTT > expectedRTT + tolerance;
+    geoNote = (httpExceeds || wsExceeds) ? "异常 ❌" : "正常 ✅";
+  }
+}
+
 
     const webrtcResult = compareAllIPs();
     const spoofResult = calculateSpoofScore(
