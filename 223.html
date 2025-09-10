@@ -1251,104 +1251,92 @@ async function fetchIPAPIData() {
     };
   }
 
-  async function runAnalysisCore() {
-    flashUpdate("⏳ 正在初始化检测，请稍候…");
-    await sleep(500);
+async function runAnalysisCore() {
+  flashUpdate("⏳ 正在初始化检测，请稍候…");
+  await sleep(500);
 
-    flashUpdate("🌐 正在查询 IP 信誉数据库…");
-    const ipapi = await withTimeout(fetchIPAPIData(), 5000);
-    if (!ipapi?.ip) {
-		// 获取IP失败，有可能是用户网络问题，或者worker失败
-      flashUpdate("❌ 网络连接不稳定，检测被中断");
-      return;
-    }
-    await sleep(500);
-
-    flashUpdate("📦 正在进行 TCP/IP 指纹识别…");
-    const osMismatch = await withTimeout(fetchTCPFingerprint(), 5000);
-    await sleep(500);
-
-    flashUpdate("📡 正在进行 WebRTC 泄露检测…");
-    await detectWebRTCWrapper();
-    await sleep(500);
-
-    flashUpdate("🗺️ 正在进行链路延迟测量…");
-    const pingRTT = await withTimeout(measurePingRTT(CONFIG.pingURL), 5000);
-    if (pingRTT === null) flashUpdate("⚠️ Ping 测量失败，跳过延迟分析");
-    await sleep(500);
-
-    const wsRTT = await withTimeout(measureWebSocketRTT(CONFIG.wsURL), 8000);
-    if (wsRTT === null) flashUpdate("⚠️ WebSocket 测量失败，跳过延迟分析");
-    await sleep(500);
-
-    flashUpdate("📡 正在进行 POP 最优入口检测…");
-    const cdnNoteRaw = await withTimeout(runCDNTriangleMeasurement(ipapi.ip), 15000);
-    const cdnMismatch = cdnNoteRaw?.includes("❌");
-    await sleep(500);
-
-    const delayDiff = pingRTT && wsRTT ? Math.abs(pingRTT - wsRTT) : null;
-
-let geoNote = "❓ 未识别";
-const countryCode = ipapi?.country_code ?? "Unknown";
-
-if (countryCode === "CN") {
-  geoNote = "🟢 正常";
-  delayDiff = null; // 大陆IP跳过链路延迟评分
-} else {
-  const ref = GEO_BASELINE?.[countryCode]?.[CONFIG.vpsRegion];
-  if (!ref) {
-    geoNote = `❓ 未识别（无 ${countryCode} → ${CONFIG.vpsRegion} 样本）`;
-  } else if (typeof pingRTT !== "number" || typeof wsRTT !== "number") {
-    geoNote = "❓ 未识别（链路测量失败）";
-  } else {
-    const { expectedRTT, tolerance } = ref;
-    const httpExceeds = pingRTT > expectedRTT + tolerance;
-    const wsExceeds = wsRTT > expectedRTT + tolerance;
-    geoNote = (httpExceeds || wsExceeds) ? "异常 ❌" : "正常 ✅";
+  flashUpdate("🌐 正在查询 IP 信誉数据库…");
+  const ipapi = await withTimeout(fetchIPAPIData(), 5000);
+  if (!ipapi?.ip) {
+    flashUpdate("❌ 网络连接不稳定，检测被中断");
+    return;
   }
+  await sleep(500);
+
+  flashUpdate("📦 正在进行 TCP/IP 指纹识别…");
+  const osMismatch = await withTimeout(fetchTCPFingerprint(), 5000);
+  await sleep(500);
+
+  flashUpdate("📡 正在进行 WebRTC 泄露检测…");
+  await detectWebRTCWrapper();
+  await sleep(500);
+
+  flashUpdate("🗺️ 正在进行链路延迟测量…");
+  const pingRTT = await withTimeout(measurePingRTT(CONFIG.pingURL), 5000);
+  if (pingRTT === null) flashUpdate("⚠️ Ping 测量失败，跳过延迟分析");
+  await sleep(500);
+
+  const wsRTT = await withTimeout(measureWebSocketRTT(CONFIG.wsURL), 8000);
+  if (wsRTT === null) flashUpdate("⚠️ WebSocket 测量失败，跳过延迟分析");
+  await sleep(500);
+
+  const countryCode = ipapi?.country_code ?? "Unknown";
+  let cdnNoteRaw = "❓ 未识别";
+  let delayDiff = pingRTT && wsRTT ? Math.abs(pingRTT - wsRTT) : null;
+  let geoNote = "❓ 未识别";
+
+  if (countryCode === "CN") {
+    geoNote = "🟢 正常";
+    delayDiff = null;
+    cdnNoteRaw = "📡 CDN 三角测量: ✅ 已识别为大陆用户，无需测点判断";
+  } else {
+    flashUpdate("📡 正在进行 POP 最优入口检测…");
+    cdnNoteRaw = await withTimeout(runCDNTriangleMeasurement(ipapi.ip), 15000);
+    await sleep(500);
+  }
+
+  const ref = GEO_BASELINE?.[countryCode]?.[CONFIG.vpsRegion];
+  if (countryCode !== "CN") {
+    if (!ref) {
+      geoNote = `❓ 未识别（无 ${countryCode} → ${CONFIG.vpsRegion} 样本）`;
+    } else if (typeof pingRTT !== "number" || typeof wsRTT !== "number") {
+      geoNote = "❓ 未识别（链路测量失败）";
+    } else {
+      const { expectedRTT, tolerance } = ref;
+      const httpExceeds = pingRTT > expectedRTT + tolerance;
+      const wsExceeds = wsRTT > expectedRTT + tolerance;
+      geoNote = (httpExceeds || wsExceeds) ? "异常 ❌" : "正常 ✅";
+    }
+  }
+
+  const webrtcResult = compareAllIPs();
+  const spoofResult = calculateSpoofScore(
+    ipapi,
+    delayDiff,
+    osMismatch,
+    geoNote,
+    cdnNoteRaw?.includes("❌"),
+    webrtcResult.status.includes("🔴")
+  );
+
+  const items = [
+    ["是否标记为 TOR", ipapi?.is_tor ? "🔴 已标记" : "🟢 未标记", ipapi?.is_tor ? "#fb0000" : "#00ff22"],
+    ["是否标记为 VPN", ipapi?.is_vpn ? "🔴 已标记" : "🟢 未标记", ipapi?.is_vpn ? "#fb0000" : "#00ff22"],
+    ["是否标记为 代理", ipapi?.is_proxy ? "🔴 已标记" : "🟢 未标记", ipapi?.is_proxy ? "#fb0000" : "#00ff22"],
+    ["是否标记为 爬虫", ipapi?.is_crawler ? "🔴 已标记" : "🟢 未标记", ipapi?.is_crawler ? "#fb0000" : "#00ff22"],
+    ["是否标记为 滥用IP", ipapi?.is_abuser ? "🔴 已标记" : "🟢 未标记", ipapi?.is_abuser ? "#fb0000" : "#00ff22"],
+    ["是否标记为 数据中心", ipapi?.is_datacenter ? "🔴 已标记" : "🟢 未标记", ipapi?.is_datacenter ? "#fb0000" : "#00ff22"],
+    ["时区是否一致", spoofResult.tzMismatch ? "🔴 检测到异常" : "🟢 正常", spoofResult.tzMismatch ? "#fb0000" : "#00ff22"],
+    ["指纹真实性", osMismatch === true ? "🔴 检测到异常" : osMismatch === false ? "🟢 正常" : "❓ 未识别", osMismatch === true ? "#fb0000" : "#00ff22"],
+    ["链路延迟测量", delayDiff !== null && delayDiff > 90 ? "🔴 检测到异常" : "🟢 正常", delayDiff !== null && delayDiff > 90 ? "#fb0000" : "#00ff22"],
+    ["地理位置延迟检测", geoNote === "异常 ❌" ? "🔴 检测到异常" : geoNote.includes("❓") ? "❓ 未识别" : "🟢 正常", geoNote === "异常 ❌" ? "#fb0000" : geoNote.includes("❓") ? "#fffb00" : "#00ff22"],
+    ["POP 最优入口检测", cdnNoteRaw?.includes("❌") ? "🔴 检测到异常" : cdnNoteRaw ?? "❓ 未识别", cdnNoteRaw?.includes("❌") ? "#fb0000" : "#00ff22"],
+    ["WebRTC 是否泄露", webrtcResult.status, webrtcResult.color]
+  ];
+
+  showResultHTML(items, spoofResult.score);
 }
 
-
-
-    const webrtcResult = compareAllIPs();
-    const spoofResult = calculateSpoofScore(
-      ipapi,
-      delayDiff,
-      osMismatch,
-      geoNote,
-      cdnMismatch,
-      webrtcResult.status.includes("🔴")
-    );
-
-    const items = [
-      ["是否标记为 TOR", ipapi?.is_tor ? "🔴 已标记" : "🟢 未标记", ipapi?.is_tor ? "#fb0000" : "#00ff22"],
-      ["是否标记为 VPN", ipapi?.is_vpn ? "🔴 已标记" : "🟢 未标记", ipapi?.is_vpn ? "#fb0000" : "#00ff22"],
-      ["是否标记为 代理", ipapi?.is_proxy ? "🔴 已标记" : "🟢 未标记", ipapi?.is_proxy ? "#fb0000" : "#00ff22"],
-      ["是否标记为 爬虫", ipapi?.is_crawler ? "🔴 已标记" : "🟢 未标记", ipapi?.is_crawler ? "#fb0000" : "#00ff22"],
-      ["是否标记为 滥用IP", ipapi?.is_abuser ? "🔴 已标记" : "🟢 未标记", ipapi?.is_abuser ? "#fb0000" : "#00ff22"],
-      ["是否标记为 数据中心", ipapi?.is_datacenter ? "🔴 已标记" : "🟢 未标记", ipapi?.is_datacenter ? "#fb0000" : "#00ff22"],
-      ["时区是否一致", spoofResult.tzMismatch ? "🔴 检测到异常" : "🟢 正常", spoofResult.tzMismatch ? "#fb0000" : "#00ff22"],
-      ["指纹真实性", osMismatch === true ? "🔴 检测到异常" : osMismatch === false ? "🟢 正常" : "❓ 未识别", osMismatch === true ? "#fb0000" : "#00ff22"],
-      ["链路延迟测量", delayDiff !== null && delayDiff > 90 ? "🔴 检测到异常" : "🟢 正常", delayDiff !== null && delayDiff > 90 ? "#fb0000" : "#00ff22"],
-      ["地理位置延迟检测", geoNote === "异常 ❌" ? "🔴 检测到异常" : geoNote.includes("❓") ? "❓ 未识别" : "🟢 正常", geoNote === "异常 ❌" ? "#fb0000" : geoNote.includes("❓") ? "#fffb00" : "#00ff22"],
-      ["POP 最优入口检测", cdnMismatch ? "🔴 检测到异常" : cdnNoteRaw ?? "❓ 未识别", cdnMismatch ? "#fb0000" : "#00ff22"],
-      ["WebRTC 是否泄露", webrtcResult.status, webrtcResult.color]
-    ];
-
-    showResultHTML(items, spoofResult.score);
-  }
-
-  async function runAnalysis() {
-    if (detectBtn.disabled) return;
-    detectBtn.disabled = true;
-    loader.style.display = "block";
-    await runAnalysisCore();
-    loader.style.display = "none";
-    detectBtn.disabled = false;
-  }
-
-  detectBtn.addEventListener("click", runAnalysis);
-});
 </script>
 
 
