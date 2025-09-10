@@ -1363,6 +1363,7 @@ await sleep(500);
     showResultHTML(items, spoofResult.score);
   }
 
+	
 async function runAnalysis() {
   if (detectBtn.disabled) return;
 
@@ -1370,8 +1371,8 @@ async function runAnalysis() {
   detectBtn.textContent = "检测中……";
 
   // ✅ 清除旧评分结果，但保留提示区域
-  const oldContainer = resultContainer.querySelector("div");
-  if (oldContainer) oldContainer.remove();
+  const oldResultBox = resultContainer.querySelector("div");
+  if (oldResultBox) oldResultBox.remove();
 
   // ✅ 清空提示文字
   statusText.textContent = "";
