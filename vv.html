@@ -492,7 +492,8 @@ footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="colo
   async function runCDNTriangleMeasurement(visitorIP) {
     const visitorCountryCode = IPStore.ipapiData?.country_code ?? "Unknown";
     if (visitorCountryCode === "CN") {
-      return "📡 CDN 三角测量: ✅ 已识别为大陆用户，无需测点判断";
+		// 默认跳过大陆IP检测
+      return "🟢 正常";
     }
 
     const endpoints = {
@@ -620,7 +621,8 @@ footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="colo
     if (countryCode === "CN") {
       geoNote = "🟢 正常";
       delayDiff = null;
-      cdnNoteRaw = "📡 CDN 三角测量: ✅ 已识别为大陆用户，无需测点判断";
+		// 默认跳过大陆IP检测
+      cdnNoteRaw = "🟢 正常";
     } else {
       flashUpdate("📡 正在进行 POP 最优入口检测…");
       cdnNoteRaw = await withTimeout(runCDNTriangleMeasurement(ipapi.ip), 15000);
