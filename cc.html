@@ -940,36 +940,38 @@ window.addEventListener("DOMContentLoaded", () => {
     table.style.borderCollapse = "collapse";
 
     // 第二段JS
-    const row = document.createElement("tr");
+items.forEach(([label, status, color]) => {
+  const row = document.createElement("tr");
 
-    const left = document.createElement("td");
-    left.textContent = "Status";
-    left.style.padding = "8px";
-    left.style.borderBottom = "1px solid #2c3b51";
-    left.style.color = "#fff";
-    left.style.fontWeight = "bold";
+  const left = document.createElement("td");
+  left.textContent = label;
+  left.style.padding = "8px";
+  left.style.borderBottom = "1px solid #2c3b51";
+  left.style.fontWeight = "bold";
 
-    const right = document.createElement("td");
-    right.textContent = "Pending";
-    right.style.padding = "8px";
-    right.style.borderBottom = "1px solid #2c3b51";
-    right.style.color = "#fff";
-    right.style.fontWeight = "bold";
+  const right = document.createElement("td");
+  right.textContent = status;
+  right.style.padding = "8px";
+  right.style.borderBottom = "1px solid #2c3b51";
+  right.style.color = color;
+  right.style.fontWeight = "bold";
 
-    row.appendChild(left);
-    row.appendChild(right);
-    table.appendChild(row);
+  row.appendChild(left);
+  row.appendChild(right);
+  table.appendChild(row);
+});
 
-    let color = "#00ff22";
-    if (score > 70) color = "#fb0000";
-    else if (score > 30) color = "#fff900";
+let color = "#00ff22";
+if (score > 70) color = "#fb0000";
+else if (score > 30) color = "#fff900";
 
-    const footer = document.createElement("div");
-    footer.style.marginTop = "50px";
-    footer.style.fontSize = "21px";
-    footer.style.textAlign = "center";
-    footer.style.fontWeight = "bold";
-    footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="color:${color}">${score}%</strong>`;
+const footer = document.createElement("div");
+footer.style.marginTop = "50px";
+footer.style.fontSize = "21px";
+footer.style.textAlign = "center";
+footer.style.fontWeight = "bold";
+footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="color:${color}">${score}%</strong>`;
+
 
     container.appendChild(table);
     container.appendChild(footer);
