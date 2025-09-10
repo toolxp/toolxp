@@ -1365,6 +1365,7 @@ await sleep(500);
 
 async function runAnalysis() {
   if (detectBtn.disabled) return;
+
   detectBtn.disabled = true;
   detectBtn.textContent = "检测中……";
 
@@ -1372,12 +1373,18 @@ async function runAnalysis() {
   const oldContainer = resultContainer.querySelector("div");
   if (oldContainer) oldContainer.remove();
 
+  // ✅ 清空提示文字
+  statusText.textContent = "";
+  finalResult.textContent = "";
+
   loader.style.display = "block";
   await runAnalysisCore();
   loader.style.display = "none";
+
   detectBtn.disabled = false;
   detectBtn.textContent = "开始检测";
 }
+
 
   detectBtn.addEventListener("click", runAnalysis);
 });
