@@ -1038,9 +1038,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
 async function fetchIPAPIData() {
   const workerList = [
-    "https://api-ipapi1.zhuyou.workers.dev",
-    "https://api-ipapi2.zhuyou.workers.dev",
-    "https://api-ipapi3.zhuyou.workers.dev"
+    "https://uncloak1.huangjie.ggff.net",
+    "https://uncloak2.huangjie.ggff.net",
+    "https://uncloak3.huangjie.ggff.net"
   ];
 
   for (const url of workerList) {
@@ -1048,62 +1048,44 @@ async function fetchIPAPIData() {
       const res = await fetch(url, { cache: "no-store" });
       const raw = await res.json();
       if (raw?.ip) {
-        IPStore.ipapiData = raw;
-        IPStore.ipapi = raw.ip;
-        return raw;
+        const filtered = {
+          ip: raw.ip,
+          timezone: raw.timezone ?? raw.location?.timezone,
+          country_code: raw.country_code ?? raw.location?.country_code ?? "Unknown",
+          country_name: raw.country_name ?? raw.location?.country ?? "Unknown",
+          region_name: raw.region_name ?? raw.location?.state ?? "",
+          city: raw.city ?? raw.location?.city ?? "",
+          latitude: raw.latitude ?? raw.location?.latitude ?? null,
+          longitude: raw.longitude ?? raw.location?.longitude ?? null,
+          continent: raw.continent ?? raw.location?.continent ?? "",
+          zip: raw.zip ?? raw.location?.zip ?? "",
+          is_eu_member: raw.is_eu_member ?? raw.location?.is_eu_member ?? false,
+          calling_code: raw.calling_code ?? raw.location?.calling_code ?? "",
+          currency_code: raw.currency_code ?? raw.location?.currency_code ?? "",
+          local_time: raw.local_time ?? raw.location?.local_time ?? "",
+          local_time_unix: raw.local_time_unix ?? raw.location?.local_time_unix ?? null,
+          is_dst: raw.is_dst ?? raw.location?.is_dst ?? false,
+          asn: raw.asn ?? null,
+          org: raw.org ?? "",
+          is_vpn: raw.is_vpn ?? false,
+          is_proxy: raw.is_proxy ?? false,
+          is_tor: raw.is_tor ?? false,
+          is_abuser: raw.is_abuser ?? false,
+          is_crawler: raw.is_crawler ?? false,
+          is_datacenter: raw.is_datacenter ?? false
+        };
+        IPStore.ipapiData = filtered;
+        IPStore.ipapi = filtered.ip;
+        return filtered;
       }
-    } catch {}
+    } catch (e) {
+      // 可选：console.warn(`Worker ${url} 请求失败`);
+    }
     await sleep(300);
   }
 
   return null;
 }
-
-
-    for (let i = 0; i < workerList.length; i++) {
-      const url = workerList[Math.floor(Math.random() * workerList.length)];
-      try {
-        const res = await fetch(url, { cache: "no-store" });
-        const raw = await res.json();
-        if (raw?.ip) {
-          const filtered = {
-            ip: raw.ip,
-            timezone: raw.timezone ?? raw.location?.timezone,
-            country_code: raw.country_code ?? raw.location?.country_code ?? "Unknown",
-            country_name: raw.country_name ?? raw.location?.country ?? "Unknown",
-            region_name: raw.region_name ?? raw.location?.state ?? "",
-            city: raw.city ?? raw.location?.city ?? "",
-            latitude: raw.latitude ?? raw.location?.latitude ?? null,
-            longitude: raw.longitude ?? raw.location?.longitude ?? null,
-            continent: raw.continent ?? raw.location?.continent ?? "",
-            zip: raw.zip ?? raw.location?.zip ?? "",
-            is_eu_member: raw.is_eu_member ?? raw.location?.is_eu_member ?? false,
-            calling_code: raw.calling_code ?? raw.location?.calling_code ?? "",
-            currency_code: raw.currency_code ?? raw.location?.currency_code ?? "",
-            local_time: raw.local_time ?? raw.location?.local_time ?? "",
-            local_time_unix: raw.local_time_unix ?? raw.location?.local_time_unix ?? null,
-            is_dst: raw.is_dst ?? raw.location?.is_dst ?? false,
-            asn: raw.asn ?? null,
-            org: raw.org ?? "",
-            is_vpn: raw.is_vpn ?? false,
-            is_proxy: raw.is_proxy ?? false,
-            is_tor: raw.is_tor ?? false,
-            is_abuser: raw.is_abuser ?? false,
-            is_crawler: raw.is_crawler ?? false,
-            is_datacenter: raw.is_datacenter ?? false
-          };
-          IPStore.ipapiData = filtered;
-          IPStore.ipapi = filtered.ip;
-          return filtered;
-        }
-      } catch (e) {
-        // 可选：console.warn(`Worker ${url} 请求失败`);
-      }
-      await sleep(300);
-    }
-
-    return null;
-  }
 
   async function fetchTCPFingerprint() {
     try {
