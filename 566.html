@@ -938,18 +938,27 @@ window.addEventListener("DOMContentLoaded", () => {
     const table = document.createElement("table");
     table.style.width = "100%";
     table.style.borderCollapse = "collapse";
-// 第二段JS
-      const right = document.createElement("td");
-      right.textContent = status;
-      right.style.padding = "8px";
-      right.style.borderBottom = "1px solid #2c3b51";
-      right.style.color = color;
-      right.style.fontWeight = "bold";
 
-      row.appendChild(left);
-      row.appendChild(right);
-      table.appendChild(row);
-    });(); 
+    // 第二段JS
+    const row = document.createElement("tr");
+
+    const left = document.createElement("td");
+    left.textContent = "Status";
+    left.style.padding = "8px";
+    left.style.borderBottom = "1px solid #2c3b51";
+    left.style.color = "#fff";
+    left.style.fontWeight = "bold";
+
+    const right = document.createElement("td");
+    right.textContent = "Pending";
+    right.style.padding = "8px";
+    right.style.borderBottom = "1px solid #2c3b51";
+    right.style.color = "#fff";
+    right.style.fontWeight = "bold";
+
+    row.appendChild(left);
+    row.appendChild(right);
+    table.appendChild(row);
 
     let color = "#00ff22";
     if (score > 70) color = "#fb0000";
@@ -1078,7 +1087,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
     return null;
   }
-// 第三段JS
+
+  // 第三段JS
   async function fetchTCPFingerprint() {
     try {
       const res = await fetch(CONFIG.tcpipAPI, { cache: "no-store" });
@@ -1209,7 +1219,8 @@ window.addEventListener("DOMContentLoaded", () => {
       ? `📡 CDN 三角测量: ✅ 最优入口 ${best.label}（${best.pop_code}）与 IP归属 ${bestCountryCode} 一致`
       : `📡 CDN 三角测量: ❌ 最优入口 ${best.label}（${best.pop_code}）与 IP归属 ${bestCountryCode} 不符`;
   }
-// 第四段JS
+
+  // 第四段JS
   function calculateSpoofScore(ipapi, delayDiff, osMismatch, geoNote, cdnMismatch, webrtcMismatch) {
     let score = 0;
 
@@ -1335,6 +1346,7 @@ window.addEventListener("DOMContentLoaded", () => {
   detectBtn.addEventListener("click", runAnalysis);
 });
 </script>
+
 
 
 
