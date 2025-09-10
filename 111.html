@@ -1,0 +1,675 @@
+<style>
+  /* 呼吸灯效果的阴影动画 */
+  @keyframes breathing {
+    0% {
+      box-shadow: 0 0 20px rgba(52, 152, 219, 0.7); /* 初始阴影 */
+    }
+    50% {
+      box-shadow: 0 0 40px rgba(52, 152, 219, 0.2); /* 最大阴影 */
+    }
+    100% {
+      box-shadow: 0 0 20px rgba(52, 152, 219, 0.7); /* 返回初始阴影 */
+    }
+  }
+</style>
+<style>
+.engine-loader {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  perspective: 510px;
+  margin: 70px auto;
+}
+.inner {
+  position: absolute;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+.inner.one {
+  left: 0;
+  top: 0;
+  border-bottom: 3px solid #efeffa;
+  animation: rotate-one 1s linear infinite;
+  transform: rotateX(35deg) rotateY(-45deg);
+}
+.inner.two {
+  right: 0;
+  top: 0;
+  border-right: 3px solid #efeffa;
+  animation: rotate-two 1s linear infinite;
+  transform: rotateX(50deg) rotateY(10deg);
+}
+.inner.three {
+  right: 0;
+  bottom: 0;
+  border-top: 3px solid #efeffa;
+  animation: rotate-three 1s linear infinite;
+  transform: rotateX(35deg) rotateY(55deg) rotateZ(360deg);
+}
+
+@keyframes rotate-one {
+  0% { transform: rotateX(35deg) rotateY(-45deg) rotateZ(0deg); }
+  100% { transform: rotateX(35deg) rotateY(-45deg) rotateZ(360deg); }
+}
+@keyframes rotate-two {
+  0% { transform: rotateX(50deg) rotateY(10deg) rotateZ(0deg); }
+  100% { transform: rotateX(50deg) rotateY(10deg) rotateZ(360deg); }
+}
+@keyframes rotate-three {
+  0% { transform: rotateX(35deg) rotateY(55deg) rotateZ(0deg); }
+  100% { transform: rotateX(35deg) rotateY(55deg) rotateZ(360deg); }
+}
+</style>
+
+
+<style>
+#output {
+  white-space: pre-wrap;
+  font-family: monospace;
+  text-align: center;
+  font-size: 21px;
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+  color:#fff;
+}
+
+span#finalResult {
+    line-height: 2.6;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0.2; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+@media screen and (max-width: 600px) {
+  #detectBtn {
+    width: 80%;
+    font-size: 14px;
+  }
+  #output {
+    font-size: 14px;
+  }
+}
+@keyframes blink-animation {
+  0% { opacity: 0.2; }
+  50% { opacity: 1; }
+  100% { opacity: 0.2; }
+}
+
+.flashStep {
+  animation: blink-animation 1.5s infinite ease-in-out;
+}
+
+#detectBtn {
+    display: block;
+    margin: 90px auto 70px auto;
+    background: #8d28a5;
+    color: #fff;
+    border: none;
+    width: 200px;
+    height: 50px;
+    font-size: 17px;
+}
+
+#detectBtn:hover {
+    background: #2e93ff;
+    color: #fff;
+}
+</style>
+
+
+<!--<button id="detectBtn" onclick="runAnalysis()" aria-label="点击按钮开始检测">开始检测</button>-->
+		<button id="detectBtn" aria-label="点击按钮开始检测">开始检测</button>
+
+
+  <div id="engine-loader" class="engine-loader" style="display: none;">
+    <div class="inner one"></div>
+    <div class="inner two"></div>
+    <div class="inner three"></div>
+  </div>
+
+  <div id="resultContainer">
+<pre id="output">
+  <span id="statusText"></span> <!-- 加上这个！提示文字专用 -->
+  <br>
+  <span id="finalResult"></span> <!-- 最终检测结果 -->
+</pre>
+
+</div>
+
+
+<script>
+// 第一段JS
+window.addEventListener("DOMContentLoaded", () => {
+  const statusText = document.getElementById("statusText");
+  const finalResult = document.getElementById("finalResult");
+  const detectBtn = document.getElementById("detectBtn");
+  const resultContainer = document.getElementById("resultContainer");
+
+  const loader = document.getElementById("engine-loader") || (() => {
+    const el = document.createElement("div");
+    el.id = "engine-loader";
+    el.style.display = "none";
+    el.style.position = "fixed";
+    el.style.top = "50%";
+    el.style.left = "50%";
+    el.style.transform = "translate(-50%, -50%)";
+    el.style.padding = "20px";
+    el.style.background = "#00000080";
+    el.style.color = "#fff";
+    el.style.fontSize = "18px";
+    el.style.borderRadius = "12px";
+    el.style.zIndex = "9999";
+    el.innerText = "正在检测中…";
+    document.body.appendChild(el);
+    return el;
+  })();
+
+  const CONFIG = {
+    pingURL: "https://us.cti.pp.ua/ping",
+    wsURL: "wss://us.cti.pp.ua/ws",
+    tcpipAPI: "https://tcp.cti.pp.ua/classify",
+    ipinfoToken: "02e0f20cbd1c07", // 用于 POP IP 归属地查询
+    wsTimeout: 3000,
+    webrtcTimeout: 5000,
+    stunServers: [
+      { urls: "stun:stun.ss.aaak.dpdns.org:3478" },
+      { urls: "stun:stun.cc.aaak.dpdns.org:3478" },
+      { urls: "stun:stun1.l.google.com:19302" }
+    ],
+    vpsRegion: "US"
+  };
+
+  const GEO_BASELINE = {
+    "AE": { "US": { expectedRTT: 239, tolerance: 100 } },
+    "AT": { "US": { expectedRTT: 161, tolerance: 100 } },
+    "AU": { "US": { expectedRTT: 221, tolerance: 100 } },
+    "BD": { "US": { expectedRTT: 232, tolerance: 100 } },
+    "BR": { "US": { expectedRTT: 229, tolerance: 100 } },
+    "CA": { "US": { expectedRTT: 64, tolerance: 60 } },
+    "CH": { "US": { expectedRTT: 159, tolerance: 100 } },
+    "CL": { "US": { expectedRTT: 146, tolerance: 60 } },
+    "CY": { "US": { expectedRTT: 206, tolerance: 100 } },
+    "DE": { "US": { expectedRTT: 139, tolerance: 60 } },
+    "ES": { "US": { expectedRTT: 150, tolerance: 100 } },
+    "FR": { "US": { expectedRTT: 133, tolerance: 60 } },
+    "GB": { "US": { expectedRTT: 133, tolerance: 60 } },
+    "HK": { "US": { expectedRTT: 55, tolerance: 70 } },
+    "IL": { "US": { expectedRTT: 200, tolerance: 100 } },
+    "IN": { "US": { expectedRTT: 211, tolerance: 100 } },
+    "IR": { "US": { expectedRTT: 229, tolerance: 100 } },
+    "JP": { "US": { expectedRTT: 107, tolerance: 60 } },
+    "KR": { "US": { expectedRTT: 141, tolerance: 60 } },
+    "MA": { "US": { expectedRTT: 161, tolerance: 100 } },
+    "NL": { "US": { expectedRTT: 138, tolerance: 60 } },
+    "NO": { "US": { expectedRTT: 151, tolerance: 100 } },
+    "RO": { "US": { expectedRTT: 176, tolerance: 100 } },
+    "SG": { "US": { expectedRTT: 178, tolerance: 100 } },
+    "TH": { "US": { expectedRTT: 201, tolerance: 100 } },
+    "TR": { "US": { expectedRTT: 216, tolerance: 100 } },
+    "TW": { "US": { expectedRTT: 136, tolerance: 60 } },
+    "US": { "US": { expectedRTT: 60, tolerance: 60 } }
+  };
+
+  const IPStore = {
+    webrtc: null,
+    ipapi: null,
+    ipapiData: null,
+    ping: null,
+    tcp: null
+  };
+
+  function withTimeout(promise, timeoutMs) {
+    return Promise.race([
+      promise,
+      new Promise(resolve => setTimeout(() => resolve(null), timeoutMs))
+    ]);
+  }
+
+  async function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function flashUpdate(text) {
+    statusText.textContent = text;
+    finalResult.textContent = "";
+    statusText.classList.remove("flashStep");
+    void statusText.offsetWidth;
+    statusText.classList.add("flashStep");
+  }
+
+  function getBrowserTimezone() {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || "Unknown";
+    } catch {
+      return "Unknown";
+    }
+  }
+
+  function showResultHTML(items, score) {
+    const container = document.createElement("div");
+    container.style.margin = "auto";
+    container.style.borderRadius = "25px";
+    container.style.padding = "20px";
+    container.style.color = "#ddd";
+    container.style.fontSize = "17px";
+    container.style.width = "90%";
+    container.style.animation = "breathing 3s ease-in-out infinite";
+    container.style.transition = "box-shadow 0.3s ease";
+    container.style.background = "#00000030";
+
+    const table = document.createElement("table");
+    table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
+
+    // 第二段JS
+    const row = document.createElement("tr");
+
+    const left = document.createElement("td");
+    left.textContent = "Status";
+    left.style.padding = "8px";
+    left.style.borderBottom = "1px solid #2c3b51";
+    left.style.color = "#fff";
+    left.style.fontWeight = "bold";
+
+    const right = document.createElement("td");
+    right.textContent = "Pending";
+    right.style.padding = "8px";
+    right.style.borderBottom = "1px solid #2c3b51";
+    right.style.color = "#fff";
+    right.style.fontWeight = "bold";
+
+    row.appendChild(left);
+    row.appendChild(right);
+    table.appendChild(row);
+
+    let color = "#00ff22";
+    if (score > 70) color = "#fb0000";
+    else if (score > 30) color = "#fff900";
+
+    const footer = document.createElement("div");
+    footer.style.marginTop = "50px";
+    footer.style.fontSize = "21px";
+    footer.style.textAlign = "center";
+    footer.style.fontWeight = "bold";
+    footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="color:${color}">${score}%</strong>`;
+
+    container.appendChild(table);
+    container.appendChild(footer);
+
+    resultContainer.innerHTML = "";
+    resultContainer.appendChild(container);
+  }
+
+  async function detectWebRTCIP() {
+    if (typeof RTCPeerConnection === "undefined") return null;
+
+    return new Promise(resolve => {
+      let resolved = false;
+      const candidates = new Set();
+      const rtc = new RTCPeerConnection({ iceServers: CONFIG.stunServers });
+
+      rtc.createDataChannel("dummy");
+      rtc.createOffer().then(offer => rtc.setLocalDescription(offer));
+
+      const timeout = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          resolve(null);
+        }
+      }, CONFIG.webrtcTimeout);
+
+      rtc.onicecandidate = event => {
+        if (!event.candidate || resolved) return;
+        const ipMatch = /([0-9]{1,3}(\\.[0-9]{1,3}){3})/.exec(event.candidate.candidate);
+        if (ipMatch) candidates.add(ipMatch[1]);
+      };
+
+      rtc.onicegatheringstatechange = () => {
+        if (rtc.iceGatheringState === "complete" && !resolved) {
+          resolved = true;
+          clearTimeout(timeout);
+          const valid = [...candidates].filter(ip =>
+            ip &&
+            !ip.startsWith("192.") &&
+            !ip.startsWith("10.") &&
+            !ip.startsWith("172.") &&
+            !ip.startsWith("127.") &&
+            !ip.startsWith("0.")
+          );
+          resolve(valid[0] || null);
+        }
+      };
+    });
+  }
+
+  async function detectWebRTCWrapper() {
+    IPStore.webrtc = await withTimeout(detectWebRTCIP(), CONFIG.webrtcTimeout);
+  }
+
+  function compareAllIPs() {
+    const { webrtc, tcp } = IPStore;
+    const ipapi = IPStore.ipapiData?.ip ?? null;
+    if (!webrtc || !ipapi) return { status: "🟢 正常", color: "#00ff22" };
+
+    const mismatch = webrtc !== ipapi || webrtc !== tcp;
+    return mismatch
+      ? { status: "🔴 检测到异常", color: "#fb0000" }
+      : { status: "🟢 正常", color: "#00ff22" };
+  }
+
+  async function fetchIPAPIData() {
+    const workerList = [
+      "https://uncloak1.huangjie.ggff.net",
+      "https://uncloak2.huangjie.ggff.net",
+      "https://uncloak3.huangjie.ggff.net"
+    ];
+
+    for (const url of workerList) {
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        const raw = await res.json();
+        const ip = raw?.ip ?? raw?.query ?? null;
+        const location = raw.location ?? {};
+        if (ip) {
+          const filtered = {
+            ip,
+            timezone: raw.timezone ?? location.timezone ?? "Unknown",
+            country_code: raw.country_code ?? location.country_code ?? "Unknown",
+            country_name: raw.country_name ?? location.country ?? "Unknown",
+            region_name: raw.region_name ?? location.state ?? "",
+            city: raw.city ?? location.city ?? "",
+            latitude: raw.latitude ?? location.latitude ?? null,
+            longitude: raw.longitude ?? location.longitude ?? null,
+            continent: raw.continent ?? location.continent ?? "",
+            zip: raw.zip ?? location.zip ?? "",
+            is_eu_member: raw.is_eu_member ?? location.is_eu_member ?? false,
+            calling_code: raw.calling_code ?? location.calling_code ?? "",
+            currency_code: raw.currency_code ?? location.currency_code ?? "",
+            local_time: raw.local_time ?? location.local_time ?? "",
+            local_time_unix: raw.local_time_unix ?? location.local_time_unix ?? null,
+            is_dst: raw.is_dst ?? location.is_dst ?? false,
+            asn: raw.asn?.asn ?? raw.asn ?? null,
+            org: raw.asn?.org ?? raw.org ?? "",
+            is_vpn: raw.is_vpn ?? false,
+            is_proxy: raw.is_proxy ?? false,
+            is_tor: raw.is_tor ?? false,
+            is_abuser: raw.is_abuser ?? false,
+            is_crawler: raw.is_crawler ?? false,
+            is_datacenter: raw.is_datacenter ?? false
+          };
+          IPStore.ipapiData = filtered;
+          IPStore.ipapi = filtered.ip;
+          return filtered;
+        }
+      } catch (e) {
+        // 可选调试输出：console.warn(`Worker ${url} 请求失败`);
+      }
+      await sleep(300);
+    }
+
+    return null;
+  }
+
+  // 第三段JS
+  async function fetchTCPFingerprint() {
+    try {
+      const res = await fetch(CONFIG.tcpipAPI, { cache: "no-store" });
+      const json = await res.json();
+      IPStore.tcp = json.lookup_ip;
+      return json.os_mismatch ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function measurePingRTT(url) {
+    const start = performance.now();
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      const json = await res.json();
+      IPStore.ping = json.ip;
+      return performance.now() - start;
+    } catch {
+      return null;
+    }
+  }
+
+  async function measureWebSocketRTT(url) {
+    return new Promise(resolve => {
+      let ws;
+      let pingStart;
+      let resolved = false;
+      const cleanUp = value => {
+        if (resolved) return;
+        resolved = true;
+        clearTimeout(timeout);
+        try { ws?.close(); } catch {}
+        resolve(value);
+      };
+      const timeout = setTimeout(() => cleanUp(null), CONFIG.wsTimeout);
+      try {
+        ws = new WebSocket(url);
+      } catch {
+        return cleanUp(null);
+      }
+      ws.onopen = () => {
+        pingStart = performance.now();
+        setTimeout(() => {
+          try { ws.send("ping"); } catch {}
+        }, 300);
+      };
+      ws.onmessage = () => cleanUp(performance.now() - pingStart);
+      ws.onerror = () => cleanUp(null);
+      ws.onclose = () => cleanUp(null);
+    });
+  }
+
+  async function fetchCountryFromIP(ip) {
+    try {
+      const res = await fetch(`https://api.ipinfo.io/lite/${ip}?token=${CONFIG.ipinfoToken}`, {
+        cache: "no-store"
+      });
+      const data = await res.json();
+      return data.country?.toUpperCase() ?? "Unknown";
+    } catch {
+      return "Unknown";
+    }
+  }
+
+  async function runCDNTriangleMeasurement(visitorIP) {
+    const visitorCountryCode = IPStore.ipapiData?.country_code ?? "Unknown";
+    if (visitorCountryCode === "CN") {
+      return "📡 CDN 三角测量: ✅ 已识别为大陆用户，无需测点判断";
+    }
+
+    const endpoints = {
+      "JP": "https://jp.907000.xyz",
+      "KR": "https://kr.907000.xyz",
+      "HK": "https://hk.sin.pp.ua",
+      "TW": "https://tw.sin.pp.ua",
+      "CA": "https://ca.606006.xyz",
+      "DE": "https://de.606006.xyz",
+      "SG": "https://sg.cdns.nyc.mn",
+      "US": "https://us.cdns.nyc.mn",
+      "NL": "https://nl.wed.pp.ua",
+      "GB": "https://gb.wed.pp.ua",
+      "ID": "https://id.toy.pp.ua",
+      "IN": "https://in.toy.pp.ua",
+      "AU": "https://au.oct.pp.ua",
+      "BR": "https://br.oct.pp.ua",
+      "AE": "https://ae.aly.pp.ua",
+      "ZA": "https://za.aly.pp.ua",
+      "PL": "https://pl.rwx.pp.ua",
+      "TR": "https://tr.rwx.pp.ua"
+    };
+
+    const fetchTasks = Object.entries(endpoints).map(([label, url]) =>
+      withTimeout(
+        fetch(url)
+          .then(res => res.json())
+          .then(json => ({
+            label,
+            rtt: json.rtt ?? null,
+            ip: json.ip ?? "N/A",
+            pop_code: json.pop_code ?? "Unknown"
+          }))
+          .catch(() => ({
+            label,
+            rtt: null,
+            ip: "FetchError",
+            pop_code: "FetchError"
+          })),
+        3000
+      )
+    );
+
+    const results = await Promise.all(fetchTasks);
+    const valid = results.filter(r => r && typeof r.rtt === "number");
+    if (!valid.length) return "📡 CDN 三角测量: 检测失败 ❌";
+
+    const best = valid.sort((a, b) => a.rtt - b.rtt)[0];
+    const bestIP = best?.ip ?? null;
+
+    if (!bestIP || bestIP === "FetchError" || bestIP === "N/A") {
+      return `📡 CDN 三角测量: 最优入口 ${best.label}（${best.pop_code}）无法识别 IP`;
+    }
+
+    const bestCountryCode = await fetchCountryFromIP(bestIP);
+    const match = best.label === bestCountryCode;
+
+    return match
+      ? `📡 CDN 三角测量: ✅ 最优入口 ${best.label}（${best.pop_code}）与 IP归属 ${bestCountryCode} 一致`
+      : `📡 CDN 三角测量: ❌ 最优入口 ${best.label}（${best.pop_code}）与 IP归属 ${bestCountryCode} 不符`;
+  }
+
+  // 第四段JS
+  function calculateSpoofScore(ipapi, delayDiff, osMismatch, geoNote, cdnMismatch, webrtcMismatch) {
+    let score = 0;
+
+    if (ipapi?.is_tor) score += 100;
+    if (ipapi?.is_vpn) score += 100;
+    if (ipapi?.is_proxy) score += 30;
+    if (ipapi?.is_crawler) score += 15;
+    if (ipapi?.is_abuser) score += 15;
+    if (ipapi?.is_datacenter) score += 10;
+
+    const browserTZ = getBrowserTimezone();
+    const ipTZ = ipapi?.timezone ?? null;
+    const tzMismatch = ipTZ && ipTZ !== browserTZ;
+    if (tzMismatch) score += 10;
+
+    if (delayDiff !== null && delayDiff > 90) score += 20;
+    if (osMismatch === true) score += 50;
+    if (geoNote === "异常 ❌") score += 30;
+    if (cdnMismatch === true) score += 50;
+    if (webrtcMismatch === true) score += 50;
+
+    return {
+      score: Math.min(score, 100),
+      tzMismatch
+    };
+  }
+
+  async function runAnalysisCore() {
+    flashUpdate("⏳ 正在初始化检测，请稍候…");
+    await sleep(500);
+
+    flashUpdate("🌐 正在查询 IP 信誉数据库…");
+    const ipapi = await withTimeout(fetchIPAPIData(), 5000);
+    if (!ipapi?.ip) {
+      flashUpdate("❌ 网络连接不稳定，检测被中断");
+      return;
+    }
+    await sleep(500);
+
+    flashUpdate("📦 正在进行 TCP/IP 指纹识别…");
+    const osMismatch = await withTimeout(fetchTCPFingerprint(), 5000);
+    await sleep(500);
+
+    flashUpdate("📡 正在进行 WebRTC 泄露检测…");
+    await detectWebRTCWrapper();
+    await sleep(500);
+
+    flashUpdate("🗺️ 正在进行链路延迟测量…");
+    const pingRTT = await withTimeout(measurePingRTT(CONFIG.pingURL), 5000);
+    if (pingRTT === null) flashUpdate("⚠️ Ping 测量失败，跳过延迟分析");
+    await sleep(500);
+
+    const wsRTT = await withTimeout(measureWebSocketRTT(CONFIG.wsURL), 8000);
+    if (wsRTT === null) flashUpdate("⚠️ WebSocket 测量失败，跳过延迟分析");
+    await sleep(500);
+
+    const countryCode = ipapi?.country_code ?? "Unknown";
+    let cdnNoteRaw = "❓ 未识别";
+    let delayDiff = pingRTT && wsRTT ? Math.abs(pingRTT - wsRTT) : null;
+    let geoNote = "❓ 未识别";
+
+    if (countryCode === "CN") {
+      geoNote = "🟢 正常";
+      delayDiff = null;
+      cdnNoteRaw = "📡 CDN 三角测量: ✅ 已识别为大陆用户，无需测点判断";
+    } else {
+      flashUpdate("📡 正在进行 POP 最优入口检测…");
+      cdnNoteRaw = await withTimeout(runCDNTriangleMeasurement(ipapi.ip), 15000);
+      await sleep(500);
+    }
+
+    const ref = GEO_BASELINE?.[countryCode]?.[CONFIG.vpsRegion];
+    if (countryCode !== "CN") {
+      if (!ref) {
+        geoNote = `❓ 未识别（无 ${countryCode} → ${CONFIG.vpsRegion} 样本）`;
+      } else if (typeof pingRTT !== "number" || typeof wsRTT !== "number") {
+        geoNote = "❓ 未识别（链路测量失败）";
+      } else {
+        const { expectedRTT, tolerance } = ref;
+        const httpExceeds = pingRTT > expectedRTT + tolerance;
+        const wsExceeds = wsRTT > expectedRTT + tolerance;
+        geoNote = (httpExceeds || wsExceeds) ? "异常 ❌" : "正常 ✅";
+      }
+    }
+
+    const webrtcResult = compareAllIPs();
+    const spoofResult = calculateSpoofScore(
+      ipapi,
+      delayDiff,
+      osMismatch,
+      geoNote,
+      cdnNoteRaw?.includes("❌"),
+      webrtcResult.status.includes("🔴")
+    );
+
+    const items = [
+      ["是否标记为 TOR", ipapi?.is_tor ? "🔴 已标记" : "🟢 未标记", ipapi?.is_tor ? "#fb0000" : "#00ff22"],
+      ["是否标记为 VPN", ipapi?.is_vpn ? "🔴 已标记" : "🟢 未标记", ipapi?.is_vpn ? "#fb0000" : "#00ff22"],
+      ["是否标记为 代理", ipapi?.is_proxy ? "🔴 已标记" : "🟢 未标记", ipapi?.is_proxy ? "#fb0000" : "#00ff22"],
+      ["是否标记为 爬虫", ipapi?.is_crawler ? "🔴 已标记" : "🟢 未标记", ipapi?.is_crawler ? "#fb0000" : "#00ff22"],
+      ["是否标记为 滥用IP", ipapi?.is_abuser ? "🔴 已标记" : "🟢 未标记", ipapi?.is_abuser ? "#fb0000" : "#00ff22"],
+      ["是否标记为 数据中心", ipapi?.is_datacenter ? "🔴 已标记" : "🟢 未标记", ipapi?.is_datacenter ? "#fb0000" : "#00ff22"],
+      ["时区是否一致", spoofResult.tzMismatch ? "🔴 检测到异常" : "🟢 正常", spoofResult.tzMismatch ? "#fb0000" : "#00ff22"],
+      ["指纹真实性", osMismatch === true ? "🔴 检测到异常" : osMismatch === false ? "🟢 正常" : "❓ 未识别", osMismatch === true ? "#fb0000" : "#00ff22"],
+      ["链路延迟测量", delayDiff !== null && delayDiff > 90 ? "🔴 检测到异常" : "🟢 正常", delayDiff !== null && delayDiff > 90 ? "#fb0000" : "#00ff22"],
+      ["地理位置延迟检测", geoNote === "异常 ❌" ? "🔴 检测到异常" : geoNote.includes("❓") ? "❓ 未识别" : "🟢 正常", geoNote === "异常 ❌" ? "#fb0000" : geoNote.includes("❓") ? "#fffb00" : "#00ff22"],
+      ["POP 最优入口检测", cdnNoteRaw?.includes("❌") ? "🔴 检测到异常" : cdnNoteRaw ?? "❓ 未识别", cdnNoteRaw?.includes("❌") ? "#fb0000" : "#00ff22"],
+      ["WebRTC 是否泄露", webrtcResult.status, webrtcResult.color]
+    ];
+
+    showResultHTML(items, spoofResult.score);
+  }
+
+  async function runAnalysis() {
+    if (detectBtn.disabled) return;
+    detectBtn.disabled = true;
+    loader.style.display = "block";
+    await runAnalysisCore();
+    loader.style.display = "none";
+    detectBtn.disabled = false;
+  }
+
+  detectBtn.addEventListener("click", runAnalysis);
+});
+</script>
