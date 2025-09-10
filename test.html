@@ -309,8 +309,9 @@ footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="colo
     container.appendChild(table);
     container.appendChild(footer);
 
-    resultContainer.innerHTML = "";
-    resultContainer.appendChild(container);
+const oldBox = resultContainer.querySelector("div");
+if (oldBox) oldBox.remove();
+resultContainer.appendChild(container);
   }
 
   async function detectWebRTCIP() {
@@ -585,16 +586,16 @@ async function fetchIPAPIData() {
     let score = 0;
 
     if (ipapi?.is_tor) score += 100;
-    if (ipapi?.is_vpn) score += 100;
+    if (ipapi?.is_vpn) score += 30;
     if (ipapi?.is_proxy) score += 30;
-    if (ipapi?.is_crawler) score += 15;
-    if (ipapi?.is_abuser) score += 15;
+    if (ipapi?.is_crawler) score += 10;
+    if (ipapi?.is_abuser) score += 10;
     if (ipapi?.is_datacenter) score += 10;
 
     const browserTZ = getBrowserTimezone();
     const ipTZ = ipapi?.timezone ?? null;
     const tzMismatch = ipTZ && ipTZ !== browserTZ;
-    if (tzMismatch) score += 10;
+    if (tzMismatch) score += 5;
 
     if (delayDiff !== null && delayDiff > 90) score += 20;
     if (osMismatch === true) score += 50;
@@ -694,17 +695,34 @@ await sleep(500);
     ];
 
     showResultHTML(items, spoofResult.score);
+	// ✅ 自动清空提示区域
+    statusText.textContent = "";
+    finalResult.textContent = "";
   }
 
-  async function runAnalysis() {
-    if (detectBtn.disabled) return;
-    detectBtn.disabled = true;
-	resultContainer.innerHTML = ""; // ✅ 清空旧结果  
-    loader.style.display = "block";
-    await runAnalysisCore();
-    loader.style.display = "none";
-    detectBtn.disabled = false;
-  }
+	
+async function runAnalysis() {
+  if (detectBtn.disabled) return;
+
+  detectBtn.disabled = true;
+  detectBtn.textContent = "检测中……";
+
+  // ✅ 清除旧评分结果，但保留提示区域
+  const oldResultBox = resultContainer.querySelector("div");
+  if (oldResultBox) oldResultBox.remove();
+
+  // ✅ 清空提示文字
+  statusText.textContent = "";
+  finalResult.textContent = "";
+
+  loader.style.display = "block";
+  await runAnalysisCore();
+  loader.style.display = "none";
+
+  detectBtn.disabled = false;
+  detectBtn.textContent = "开始检测";
+}
+
 
   detectBtn.addEventListener("click", runAnalysis);
 });
