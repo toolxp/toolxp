@@ -1045,7 +1045,8 @@ async function fetchIPAPIData() {
   const workerList = [
     "https://uncloak1.huangjie.ggff.net",
     "https://uncloak2.huangjie.ggff.net",
-    "https://uncloak3.huangjie.ggff.net"
+    "https://uncloak3.huangjie.ggff.net",
+	"https://api.ipapi.is"  
   ];
 
   for (const url of workerList) {
@@ -1291,8 +1292,8 @@ let geoNote = "❓ 未识别";
 const countryCode = ipapi?.country_code ?? "Unknown";
 
 if (countryCode === "CN") {
-	// 大陆用户跳过检测
   geoNote = "🟢 正常";
+  delayDiff = null; // 大陆IP跳过链路延迟评分
 } else {
   const ref = GEO_BASELINE?.[countryCode]?.[CONFIG.vpsRegion];
   if (!ref) {
@@ -1306,6 +1307,7 @@ if (countryCode === "CN") {
     geoNote = (httpExceeds || wsExceeds) ? "异常 ❌" : "正常 ✅";
   }
 }
+
 
 
     const webrtcResult = compareAllIPs();
