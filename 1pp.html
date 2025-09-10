@@ -1018,16 +1018,29 @@ window.addEventListener("DOMContentLoaded", () => {
       ? { status: "🔴 检测到异常", color: "#fb0000" }
       : { status: "🟢 正常", color: "#00ff22" };
   }
-  async function fetchIPAPIData() {
+async function fetchIPAPIData() {
+  const workerList = [
+    "https://api-ipapi.zhuyou.workers.dev"
+  ];
+
+  for (let i = 0; i < workerList.length; i++) {
+    const url = workerList[Math.floor(Math.random() * workerList.length)];
     try {
-      const res = await fetch(CONFIG.ipapiURL, { cache: "no-store" });
+      const res = await fetch(url, { cache: "no-store" });
       const json = await res.json();
-      IPStore.ipapi = json.ip;
-      return json;
-    } catch {
-      return null;
+      if (json?.ip) {
+        IPStore.ipapi = json.ip;
+        return json;
+      }
+    } catch (e) {
+      // 可选：console.warn(`Worker ${url} 请求失败`);
     }
+    await sleep(300); // 可选：避免瞬时并发
   }
+
+  return null;
+}
+
 
   async function fetchTCPFingerprint() {
     try {
