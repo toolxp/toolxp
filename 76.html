@@ -847,8 +847,8 @@ window.addEventListener("DOMContentLoaded", () => {
     wsURL: "wss://us.cti.pp.ua/ws",
     tcpipAPI: "https://tcp.cti.pp.ua/classify",
     ipinfoToken: "02e0f20cbd1c07", // 用于 POP IP 归属地查询
-    wsTimeout: 3000,
-    webrtcTimeout: 5000,
+    wsTimeout: 8000,
+    webrtcTimeout: 8000,
     stunServers: [
       { urls: "stun:stun.ss.aaak.dpdns.org:3478" },
       { urls: "stun:stun.cc.aaak.dpdns.org:3478" },
@@ -1275,7 +1275,7 @@ await sleep(500);
 
 
     flashUpdate("📦 正在进行 TCP/IP 指纹识别…");
-    const osMismatch = await withTimeout(fetchTCPFingerprint(), 5000);
+    const osMismatch = await withTimeout(fetchTCPFingerprint(), 10000);
     await sleep(500);
 
     flashUpdate("📡 正在进行 WebRTC 泄露检测…");
@@ -1283,11 +1283,11 @@ await sleep(500);
     await sleep(500);
 
     flashUpdate("🗺️ 正在进行链路延迟测量…");
-    const pingRTT = await withTimeout(measurePingRTT(CONFIG.pingURL), 5000);
+    const pingRTT = await withTimeout(measurePingRTT(CONFIG.pingURL), 6000);
     if (pingRTT === null) flashUpdate("⚠️ Ping 测量失败，跳过延迟分析");
     await sleep(500);
 
-    const wsRTT = await withTimeout(measureWebSocketRTT(CONFIG.wsURL), 8000);
+    const wsRTT = await withTimeout(measureWebSocketRTT(CONFIG.wsURL), 12000);
     if (wsRTT === null) flashUpdate("⚠️ WebSocket 测量失败，跳过延迟分析");
     await sleep(500);
 
