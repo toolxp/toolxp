@@ -370,58 +370,70 @@ footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="colo
       : { status: "🟢 正常", color: "#00ff22" };
   }
 
-  async function fetchIPAPIData() {
-    const workerList = [
-      "https://uncloak1.huangjie.ggff.net",
-      "https://uncloak2.huangjie.ggff.net",
-      "https://uncloak3.huangjie.ggff.net"
-    ];
+async function fetchIPAPIData() {
+  const workerList = [
+    "https://uncloak1.huangjie.ggff.net",
+    "https://uncloak2.huangjie.ggff.net",
+    "https://uncloak3.huangjie.ggff.net",
+    "https://api.ipapi.is"
+  ];
 
-    for (const url of workerList) {
-      try {
-        const res = await fetch(url, { cache: "no-store" });
-        const raw = await res.json();
-        const ip = raw?.ip ?? raw?.query ?? null;
-        const location = raw.location ?? {};
-        if (ip) {
-          const filtered = {
-            ip,
-            timezone: raw.timezone ?? location.timezone ?? "Unknown",
-            country_code: raw.country_code ?? location.country_code ?? "Unknown",
-            country_name: raw.country_name ?? location.country ?? "Unknown",
-            region_name: raw.region_name ?? location.state ?? "",
-            city: raw.city ?? location.city ?? "",
-            latitude: raw.latitude ?? location.latitude ?? null,
-            longitude: raw.longitude ?? location.longitude ?? null,
-            continent: raw.continent ?? location.continent ?? "",
-            zip: raw.zip ?? location.zip ?? "",
-            is_eu_member: raw.is_eu_member ?? location.is_eu_member ?? false,
-            calling_code: raw.calling_code ?? location.calling_code ?? "",
-            currency_code: raw.currency_code ?? location.currency_code ?? "",
-            local_time: raw.local_time ?? location.local_time ?? "",
-            local_time_unix: raw.local_time_unix ?? location.local_time_unix ?? null,
-            is_dst: raw.is_dst ?? location.is_dst ?? false,
-            asn: raw.asn?.asn ?? raw.asn ?? null,
-            org: raw.asn?.org ?? raw.org ?? "",
-            is_vpn: raw.is_vpn ?? false,
-            is_proxy: raw.is_proxy ?? false,
-            is_tor: raw.is_tor ?? false,
-            is_abuser: raw.is_abuser ?? false,
-            is_crawler: raw.is_crawler ?? false,
-            is_datacenter: raw.is_datacenter ?? false
-          };
-          IPStore.ipapiData = filtered;
-          IPStore.ipapi = filtered.ip;
-          return filtered;
-        }
-      } catch (e) {
-        // 可选调试输出：console.warn(`Worker ${url} 请求失败`);
+  for (const url of workerList) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000); // 4秒超时
+
+      const res = await fetch(url, {
+        cache: "no-store",
+        signal: controller.signal
+      });
+
+      clearTimeout(timeout);
+      const raw = await res.json();
+      const ip = raw?.ip ?? raw?.query ?? null;
+      const location = raw.location ?? {};
+
+      if (ip) {
+        const filtered = {
+          ip,
+          timezone: raw.timezone ?? location.timezone ?? "Unknown",
+          country_code: raw.country_code ?? location.country_code ?? "Unknown",
+          country_name: raw.country_name ?? location.country ?? "Unknown",
+          region_name: raw.region_name ?? location.state ?? "",
+          city: raw.city ?? location.city ?? "",
+          latitude: raw.latitude ?? location.latitude ?? null,
+          longitude: raw.longitude ?? location.longitude ?? null,
+          continent: raw.continent ?? location.continent ?? "",
+          zip: raw.zip ?? location.zip ?? "",
+          is_eu_member: raw.is_eu_member ?? location.is_eu_member ?? false,
+          calling_code: raw.calling_code ?? location.calling_code ?? "",
+          currency_code: raw.currency_code ?? location.currency_code ?? "",
+          local_time: raw.local_time ?? location.local_time ?? "",
+          local_time_unix: raw.local_time_unix ?? location.local_time_unix ?? null,
+          is_dst: raw.is_dst ?? location.is_dst ?? false,
+          asn: raw.asn?.asn ?? raw.asn ?? null,
+          org: raw.asn?.org ?? raw.org ?? "",
+          is_vpn: raw.is_vpn ?? false,
+          is_proxy: raw.is_proxy ?? false,
+          is_tor: raw.is_tor ?? false,
+          is_abuser: raw.is_abuser ?? false,
+          is_crawler: raw.is_crawler ?? false,
+          is_datacenter: raw.is_datacenter ?? false
+        };
+        IPStore.ipapiData = filtered;
+        IPStore.ipapi = filtered.ip;
+        return filtered;
       }
-      await sleep(300);
+    } catch (e) {
+      // 可选调试输出：console.warn(`接口 ${url} 请求失败`, e);
     }
 
-    return null;
+    await sleep(300); // 防止连续请求过快
   }
+
+  return null;
+}
+
 
   // 第三段JS
   async function fetchTCPFingerprint() {
