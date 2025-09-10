@@ -1248,7 +1248,7 @@ async function fetchIPAPIData() {
     flashUpdate("⏳ 正在初始化检测，请稍候…");
     await sleep(500);
 
-    flashUpdate("🌐 正在获取 IP 与地理信息…");
+    flashUpdate("🌐 正在查询 IP 信誉数据库…");
     const ipapi = await withTimeout(fetchIPAPIData(), 5000);
     if (!ipapi?.ip) {
       flashUpdate("❌ 无法获取 IP 信息，检测终止");
@@ -1280,10 +1280,15 @@ async function fetchIPAPIData() {
 
     const delayDiff = pingRTT && wsRTT ? Math.abs(pingRTT - wsRTT) : null;
 
-    let geoNote = "数据库样本不足 ❓";
+    let geoNote = "❓ 未识别";
     const countryCode = ipapi?.country_code ?? "Unknown";
     const ref = GEO_BASELINE?.[countryCode]?.[CONFIG.vpsRegion];
-    if (ref && typeof pingRTT === "number" && typeof wsRTT === "number") {
+
+    if (!ref) {
+      geoNote = `❓ 未识别（无 ${countryCode} → ${CONFIG.vpsRegion} 样本）`;
+    } else if (typeof pingRTT !== "number" || typeof wsRTT !== "number") {
+      geoNote = "❓ 未识别（链路测量失败）";
+    } else {
       const { expectedRTT, tolerance } = ref;
       const httpExceeds = pingRTT > expectedRTT + tolerance;
       const wsExceeds = wsRTT > expectedRTT + tolerance;
@@ -1330,6 +1335,7 @@ async function fetchIPAPIData() {
   detectBtn.addEventListener("click", runAnalysis);
 });
 </script>
+
 
 
 
