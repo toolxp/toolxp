@@ -1037,58 +1037,82 @@ footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="colo
       : { status: "🟢 正常", color: "#00ff22" };
   }
 
-  async function fetchIPAPIData() {
-    const workerList = [
-      "https://uncloak1.huangjie.ggff.net",
-      "https://uncloak2.huangjie.ggff.net",
-      "https://uncloak3.huangjie.ggff.net"
-    ];
+async function fetchIPAPIData() {
+  const workerList = [
+    "https://uncloak1.huangjie.ggff.net",
+    "https://uncloak2.huangjie.ggff.net",
+    "https://uncloak3.huangjie.ggff.net",
+    "https://api.ipapi.is",
+    "https://uncloak3.huangjie.ggff.net"	  
+  ];
 
-    for (const url of workerList) {
-      try {
-        const res = await fetch(url, { cache: "no-store" });
-        const raw = await res.json();
-        const ip = raw?.ip ?? raw?.query ?? null;
-        const location = raw.location ?? {};
-        if (ip) {
-          const filtered = {
-            ip,
-            timezone: raw.timezone ?? location.timezone ?? "Unknown",
-            country_code: raw.country_code ?? location.country_code ?? "Unknown",
-            country_name: raw.country_name ?? location.country ?? "Unknown",
-            region_name: raw.region_name ?? location.state ?? "",
-            city: raw.city ?? location.city ?? "",
-            latitude: raw.latitude ?? location.latitude ?? null,
-            longitude: raw.longitude ?? location.longitude ?? null,
-            continent: raw.continent ?? location.continent ?? "",
-            zip: raw.zip ?? location.zip ?? "",
-            is_eu_member: raw.is_eu_member ?? location.is_eu_member ?? false,
-            calling_code: raw.calling_code ?? location.calling_code ?? "",
-            currency_code: raw.currency_code ?? location.currency_code ?? "",
-            local_time: raw.local_time ?? location.local_time ?? "",
-            local_time_unix: raw.local_time_unix ?? location.local_time_unix ?? null,
-            is_dst: raw.is_dst ?? location.is_dst ?? false,
-            asn: raw.asn?.asn ?? raw.asn ?? null,
-            org: raw.asn?.org ?? raw.org ?? "",
-            is_vpn: raw.is_vpn ?? false,
-            is_proxy: raw.is_proxy ?? false,
-            is_tor: raw.is_tor ?? false,
-            is_abuser: raw.is_abuser ?? false,
-            is_crawler: raw.is_crawler ?? false,
-            is_datacenter: raw.is_datacenter ?? false
-          };
-          IPStore.ipapiData = filtered;
-          IPStore.ipapi = filtered.ip;
-          return filtered;
-        }
-      } catch (e) {
-        // 可选调试输出：console.warn(`Worker ${url} 请求失败`);
-      }
-      await sleep(300);
+  for (const url of workerList) {
+    try {
+      const fetchWithTimeout = new Promise((resolve, reject) => {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => {
+          controller.abort();
+          reject(new Error("Timeout"));
+        }, 4000);
+
+        fetch(url, { cache: "no-store", signal: controller.signal })
+          .then(res => res.json())
+          .then(raw => {
+            clearTimeout(timeout);
+            const ip = raw?.ip ?? raw?.query ?? null;
+            const location = raw.location ?? {};
+            if (!ip) return reject(new Error("No IP"));
+
+            const filtered = {
+              ip,
+              timezone: raw.timezone ?? location.timezone ?? "Unknown",
+              country_code: raw.country_code ?? location.country_code ?? "Unknown",
+              country_name: raw.country_name ?? location.country ?? "Unknown",
+              region_name: raw.region_name ?? location.state ?? "",
+              city: raw.city ?? location.city ?? "",
+              latitude: raw.latitude ?? location.latitude ?? null,
+              longitude: raw.longitude ?? location.longitude ?? null,
+              continent: raw.continent ?? location.continent ?? "",
+              zip: raw.zip ?? location.zip ?? "",
+              is_eu_member: raw.is_eu_member ?? location.is_eu_member ?? false,
+              calling_code: raw.calling_code ?? location.calling_code ?? "",
+              currency_code: raw.currency_code ?? location.currency_code ?? "",
+              local_time: raw.local_time ?? location.local_time ?? "",
+              local_time_unix: raw.local_time_unix ?? location.local_time_unix ?? null,
+              is_dst: raw.is_dst ?? location.is_dst ?? false,
+              asn: raw.asn?.asn ?? raw.asn ?? null,
+              org: raw.asn?.org ?? raw.org ?? "",
+              is_vpn: raw.is_vpn ?? false,
+              is_proxy: raw.is_proxy ?? false,
+              is_tor: raw.is_tor ?? false,
+              is_abuser: raw.is_abuser ?? false,
+              is_crawler: raw.is_crawler ?? false,
+              is_datacenter: raw.is_datacenter ?? false
+            };
+
+            IPStore.ipapiData = filtered;
+            IPStore.ipapi = filtered.ip;
+            resolve(filtered);
+          })
+          .catch(err => {
+            clearTimeout(timeout);
+            reject(err);
+          });
+      });
+
+      const result = await fetchWithTimeout;
+      if (result?.ip) return result;
+    } catch (e) {
+      // 可选调试输出：console.warn(`接口 ${url} 请求失败`, e);
     }
 
-    return null;
+    await sleep(300);
   }
+
+  return null;
+}
+
+
 
   // 第三段JS
   async function fetchTCPFingerprint() {
@@ -1159,7 +1183,8 @@ footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="colo
   async function runCDNTriangleMeasurement(visitorIP) {
     const visitorCountryCode = IPStore.ipapiData?.country_code ?? "Unknown";
     if (visitorCountryCode === "CN") {
-      return "📡 CDN 三角测量: ✅ 已识别为大陆用户，无需测点判断";
+		// 默认跳过大陆IP检测
+      return "🟢 正常";
     }
 
     const endpoints = {
@@ -1254,13 +1279,14 @@ footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="colo
     flashUpdate("⏳ 正在初始化检测，请稍候…");
     await sleep(500);
 
-    flashUpdate("🌐 正在查询 IP 信誉数据库…");
-    const ipapi = await withTimeout(fetchIPAPIData(), 5000);
-    if (!ipapi?.ip) {
-      flashUpdate("❌ 网络连接不稳定，检测被中断");
-      return;
-    }
-    await sleep(500);
+flashUpdate("🌐 正在查询 IP 信誉数据库…");
+const ipapi = await fetchIPAPIData(); // ✅ 不加 withTimeout
+if (!ipapi?.ip) {
+  flashUpdate("❌ 网络连接不稳定，检测被中断");
+  return;
+}
+await sleep(500);
+
 
     flashUpdate("📦 正在进行 TCP/IP 指纹识别…");
     const osMismatch = await withTimeout(fetchTCPFingerprint(), 5000);
@@ -1287,7 +1313,8 @@ footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="colo
     if (countryCode === "CN") {
       geoNote = "🟢 正常";
       delayDiff = null;
-      cdnNoteRaw = "📡 CDN 三角测量: ✅ 已识别为大陆用户，无需测点判断";
+		// 默认跳过大陆IP检测
+      cdnNoteRaw = "🟢 正常";
     } else {
       flashUpdate("📡 正在进行 POP 最优入口检测…");
       cdnNoteRaw = await withTimeout(runCDNTriangleMeasurement(ipapi.ip), 15000);
