@@ -845,6 +845,7 @@ window.addEventListener("DOMContentLoaded", () => {
     pingURL: "https://us.cti.pp.ua/ping",
     wsURL: "wss://us.cti.pp.ua/ws",
     tcpipAPI: "https://tcp.cti.pp.ua/classify",
+    ipinfoToken: "02e0f20cbd1c07", // 用于 POP IP 归属地查询
     wsTimeout: 3000,
     webrtcTimeout: 5000,
     stunServers: [
@@ -1050,23 +1051,23 @@ window.addEventListener("DOMContentLoaded", () => {
         if (raw?.ip) {
           const filtered = {
             ip: raw.ip,
-            timezone: raw.location?.timezone ?? raw.timezone,
-            country_code: raw.location?.country_code ?? raw.asn?.country?.toUpperCase() ?? "Unknown",
-            country_name: raw.location?.country ?? "Unknown",
-            region_name: raw.location?.state ?? "",
-            city: raw.location?.city ?? "",
-            latitude: raw.location?.latitude ?? null,
-            longitude: raw.location?.longitude ?? null,
-            continent: raw.location?.continent ?? "",
-            zip: raw.location?.zip ?? "",
-            is_eu_member: raw.location?.is_eu_member ?? false,
-            calling_code: raw.location?.calling_code ?? "",
-            currency_code: raw.location?.currency_code ?? "",
-            local_time: raw.location?.local_time ?? "",
-            local_time_unix: raw.location?.local_time_unix ?? null,
-            is_dst: raw.location?.is_dst ?? false,
-            asn: raw.asn?.asn ?? null,
-            org: raw.asn?.org ?? "",
+            timezone: raw.timezone ?? raw.location?.timezone,
+            country_code: raw.country_code ?? raw.location?.country_code ?? "Unknown",
+            country_name: raw.country_name ?? raw.location?.country ?? "Unknown",
+            region_name: raw.region_name ?? raw.location?.state ?? "",
+            city: raw.city ?? raw.location?.city ?? "",
+            latitude: raw.latitude ?? raw.location?.latitude ?? null,
+            longitude: raw.longitude ?? raw.location?.longitude ?? null,
+            continent: raw.continent ?? raw.location?.continent ?? "",
+            zip: raw.zip ?? raw.location?.zip ?? "",
+            is_eu_member: raw.is_eu_member ?? raw.location?.is_eu_member ?? false,
+            calling_code: raw.calling_code ?? raw.location?.calling_code ?? "",
+            currency_code: raw.currency_code ?? raw.location?.currency_code ?? "",
+            local_time: raw.local_time ?? raw.location?.local_time ?? "",
+            local_time_unix: raw.local_time_unix ?? raw.location?.local_time_unix ?? null,
+            is_dst: raw.is_dst ?? raw.location?.is_dst ?? false,
+            asn: raw.asn ?? null,
+            org: raw.org ?? "",
             is_vpn: raw.is_vpn ?? false,
             is_proxy: raw.is_proxy ?? false,
             is_tor: raw.is_tor ?? false,
@@ -1103,6 +1104,7 @@ window.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch(url, { cache: "no-store" });
       const json = await res.json();
+      IPStore.ping = json.ip;
       return performance.now() - start;
     } catch {
       return null;
@@ -1137,6 +1139,18 @@ window.addEventListener("DOMContentLoaded", () => {
       ws.onerror = () => cleanUp(null);
       ws.onclose = () => cleanUp(null);
     });
+  }
+
+  async function fetchCountryFromIP(ip) {
+    try {
+      const res = await fetch(`https://api.ipinfo.io/lite/${ip}?token=${CONFIG.ipinfoToken}`, {
+        cache: "no-store"
+      });
+      const data = await res.json();
+      return data.country?.toUpperCase() ?? "Unknown";
+    } catch {
+      return "Unknown";
+    }
   }
 
   async function runCDNTriangleMeasurement(visitorIP) {
@@ -1193,13 +1207,11 @@ window.addEventListener("DOMContentLoaded", () => {
     const best = valid.sort((a, b) => a.rtt - b.rtt)[0];
     const bestIP = best?.ip ?? null;
 
-    // 如果 POP 返回的 IP 无效，则跳过判断
     if (!bestIP || bestIP === "FetchError" || bestIP === "N/A") {
       return `📡 CDN 三角测量: 最优入口 ${best.label}（${best.pop_code}）无法识别 IP`;
     }
 
-    // 使用访客归属地与 POP IP 的归属地对比
-    const bestCountryCode = IPStore.ipapiData?.country_code ?? "Unknown";
+    const bestCountryCode = await fetchCountryFromIP(bestIP);
     const match = best.label === bestCountryCode;
 
     return match
@@ -1319,8 +1331,6 @@ window.addEventListener("DOMContentLoaded", () => {
   detectBtn.addEventListener("click", runAnalysis);
 });
 </script>
-
-
 
 
 
