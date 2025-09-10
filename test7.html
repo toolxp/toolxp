@@ -641,18 +641,19 @@ await sleep(500);
     }
 
     const ref = GEO_BASELINE?.[countryCode]?.[CONFIG.vpsRegion];
-    if (countryCode !== "CN") {
-      if (!ref) {
-        geoNote = `❓ 未识别（无 ${countryCode} → ${CONFIG.vpsRegion} 样本）`;
-      } else if (typeof pingRTT !== "number" || typeof wsRTT !== "number") {
-        geoNote = "❓ 未识别（链路测量失败）";
-      } else {
-        const { expectedRTT, tolerance } = ref;
-        const httpExceeds = pingRTT > expectedRTT + tolerance;
-        const wsExceeds = wsRTT > expectedRTT + tolerance;
-        geoNote = (httpExceeds || wsExceeds) ? "异常 ❌" : "正常 ✅";
-      }
-    }
+if (countryCode !== "CN") {
+  if (!ref) {
+    geoNote = `❓ 未识别（无 ${countryCode} → ${CONFIG.vpsRegion} 样本）`;
+  } else if (pingRTT == null || wsRTT == null || isNaN(pingRTT) || isNaN(wsRTT)) {
+    geoNote = "❓ 未识别（链路测量失败）";
+  } else {
+    const { expectedRTT, tolerance } = ref;
+    const httpExceeds = pingRTT > expectedRTT + tolerance;
+    const wsExceeds = wsRTT > expectedRTT + tolerance;
+    geoNote = (httpExceeds || wsExceeds) ? "异常 ❌" : "正常 ✅";
+  }
+}
+
 
     const webrtcResult = compareAllIPs();
     const spoofResult = calculateSpoofScore(
