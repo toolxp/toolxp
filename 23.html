@@ -976,47 +976,52 @@ window.addEventListener("DOMContentLoaded", () => {
     resultContainer.appendChild(container);
   }
 
-  async function detectWebRTCIP() {
-    return new Promise(resolve => {
-      let resolved = false;
-      const candidates = new Set();
-      const rtc = new RTCPeerConnection({ iceServers: CONFIG.stunServers });
-
-      rtc.createDataChannel("dummy");
-      rtc.createOffer().then(offer => rtc.setLocalDescription(offer));
-
-      const timeout = setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
-          resolve(null);
-        }
-      }, CONFIG.webrtcTimeout);
-
-      rtc.onicecandidate = event => {
-        if (!event.candidate || resolved) return;
-        const ipMatch = /([0-9]{1,3}(\\.[0-9]{1,3}){3})/.exec(event.candidate.candidate);
-        if (ipMatch) {
-          candidates.add(ipMatch[1]);
-        }
-      };
-
-      rtc.onicegatheringstatechange = () => {
-        if (rtc.iceGatheringState === "complete" && !resolved) {
-          resolved = true;
-          clearTimeout(timeout);
-          const valid = [...candidates].filter(ip =>
-            ip &&
-            !ip.startsWith("192.") &&
-            !ip.startsWith("10.") &&
-            !ip.startsWith("172.") &&
-            !ip.startsWith("127.") &&
-            !ip.startsWith("0.")
-          );
-          resolve(valid[0] || null);
-        }
-      };
-    });
+async function detectWebRTCIP() {
+  if (typeof RTCPeerConnection === "undefined") {
+    return null; // WebRTC 被禁用，跳过检测
   }
+
+  return new Promise(resolve => {
+    let resolved = false;
+    const candidates = new Set();
+    const rtc = new RTCPeerConnection({ iceServers: CONFIG.stunServers });
+
+    rtc.createDataChannel("dummy");
+    rtc.createOffer().then(offer => rtc.setLocalDescription(offer));
+
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        resolve(null);
+      }
+    }, CONFIG.webrtcTimeout);
+
+    rtc.onicecandidate = event => {
+      if (!event.candidate || resolved) return;
+      const ipMatch = /([0-9]{1,3}(\\.[0-9]{1,3}){3})/.exec(event.candidate.candidate);
+      if (ipMatch) {
+        candidates.add(ipMatch[1]);
+      }
+    };
+
+    rtc.onicegatheringstatechange = () => {
+      if (rtc.iceGatheringState === "complete" && !resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        const valid = [...candidates].filter(ip =>
+          ip &&
+          !ip.startsWith("192.") &&
+          !ip.startsWith("10.") &&
+          !ip.startsWith("172.") &&
+          !ip.startsWith("127.") &&
+          !ip.startsWith("0.")
+        );
+        resolve(valid[0] || null);
+      }
+    };
+  });
+}
+
 
   async function detectWebRTCWrapper() {
     IPStore.webrtc = await withTimeout(detectWebRTCIP(), CONFIG.webrtcTimeout);
