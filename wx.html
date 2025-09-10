@@ -976,8 +976,9 @@ footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="colo
     container.appendChild(table);
     container.appendChild(footer);
 
-    resultContainer.innerHTML = "";
-    resultContainer.appendChild(container);
+const oldBox = resultContainer.querySelector("div");
+if (oldBox) oldBox.remove();
+resultContainer.appendChild(container);
   }
 
   async function detectWebRTCIP() {
