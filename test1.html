@@ -514,72 +514,72 @@ async function fetchIPAPIData() {
     }
   }
 
-  async function runCDNTriangleMeasurement(visitorIP) {
-    const visitorCountryCode = IPStore.ipapiData?.country_code ?? "Unknown";
-    if (visitorCountryCode === "CN") {
-		// 默认跳过大陆IP检测
-      return "🟢 正常";
-    }
-
-    const endpoints = {
-      "JP": "https://jp.907000.xyz",
-      "KR": "https://kr.907000.xyz",
-      "HK": "https://hk.sin.pp.ua",
-      "TW": "https://tw.sin.pp.ua",
-      "CA": "https://ca.606006.xyz",
-      "DE": "https://de.606006.xyz",
-      "SG": "https://sg.cdns.nyc.mn",
-      "US": "https://us.cdns.nyc.mn",
-      "NL": "https://nl.wed.pp.ua",
-      "GB": "https://gb.wed.pp.ua",
-      "ID": "https://id.toy.pp.ua",
-      "IN": "https://in.toy.pp.ua",
-      "AU": "https://au.oct.pp.ua",
-      "BR": "https://br.oct.pp.ua",
-      "AE": "https://ae.aly.pp.ua",
-      "ZA": "https://za.aly.pp.ua",
-      "PL": "https://pl.rwx.pp.ua",
-      "TR": "https://tr.rwx.pp.ua"
-    };
-
-    const fetchTasks = Object.entries(endpoints).map(([label, url]) =>
-      withTimeout(
-        fetch(url)
-          .then(res => res.json())
-          .then(json => ({
-            label,
-            rtt: json.rtt ?? null,
-            ip: json.ip ?? "N/A",
-            pop_code: json.pop_code ?? "Unknown"
-          }))
-          .catch(() => ({
-            label,
-            rtt: null,
-            ip: "FetchError",
-            pop_code: "FetchError"
-          })),
-        3000
-      )
-    );
-
-    const results = await Promise.all(fetchTasks);
-    const valid = results.filter(r => r && typeof r.rtt === "number");
-    if (!valid.length) return "📡 CDN 三角测量: 检测失败 ❌";
-
-    const best = valid.sort((a, b) => a.rtt - b.rtt)[0];
-    const bestIP = best?.ip ?? null;
-
-    if (!bestIP || bestIP === "FetchError" || bestIP === "N/A") {
-      return `📡 CDN 三角测量: 最优入口 ${best.label}（${best.pop_code}）无法识别 IP`;
-    }
-
-    const bestCountryCode = await fetchCountryFromIP(bestIP);
-    const match = best.label === bestCountryCode;
-
-    return match
-      ? `📡 CDN 三角测量: ✅ 最优入口 ${best.label}（${best.pop_code}）与 IP归属 ${bestCountryCode} 一致`
-      : `📡 CDN 三角测量: ❌ 最优入口 ${best.label}（${best.pop_code}）与 IP归属 ${bestCountryCode} 不符`;
+async function runCDNTriangleMeasurement(visitorIP) {
+  const visitorCountryCode = IPStore.ipapiData?.country_code ?? "Unknown";
+  if (visitorCountryCode === "CN") {
+    // 默认跳过大陆IP检测
+    return "🟢 正常";
   }
+
+  const endpoints = {
+    "JP": "https://jp.907000.xyz",
+    "KR": "https://kr.907000.xyz",
+    "HK": "https://hk.sin.pp.ua",
+    "TW": "https://tw.sin.pp.ua",
+    "CA": "https://ca.606006.xyz",
+    "DE": "https://de.606006.xyz",
+    "SG": "https://sg.cdns.nyc.mn",
+    "US": "https://us.cdns.nyc.mn",
+    "NL": "https://nl.wed.pp.ua",
+    "GB": "https://gb.wed.pp.ua",
+    "ID": "https://id.toy.pp.ua",
+    "IN": "https://in.toy.pp.ua",
+    "AU": "https://au.oct.pp.ua",
+    "BR": "https://br.oct.pp.ua",
+    "AE": "https://ae.aly.pp.ua",
+    "ZA": "https://za.aly.pp.ua",
+    "PL": "https://pl.rwx.pp.ua",
+    "TR": "https://tr.rwx.pp.ua"
+  };
+
+  const fetchTasks = Object.entries(endpoints).map(([label, url]) =>
+    withTimeout(
+      fetch(url)
+        .then(res => res.json())
+        .then(json => ({
+          label,
+          rtt: json.rtt ?? null,
+          ip: json.ip ?? "N/A",
+          pop_code: json.pop_code ?? "Unknown"
+        }))
+        .catch(() => ({
+          label,
+          rtt: null,
+          ip: "FetchError",
+          pop_code: "FetchError"
+        })),
+      3000
+    )
+  );
+
+  const results = await Promise.all(fetchTasks);
+  const valid = results.filter(r => r && typeof r.rtt === "number");
+  if (!valid.length) return "📡 CDN 三角测量: 检测失败 ❌";
+
+  const best = valid.sort((a, b) => a.rtt - b.rtt)[0];
+  const bestIP = best?.ip ?? null;
+  if (!bestIP || bestIP === "FetchError" || bestIP === "N/A") {
+    return `📡 CDN 三角测量: 最优入口 ${best.label}（${best.pop_code}）无法识别 IP`;
+  }
+
+  const bestCountryCode = await fetchCountryFromIP(bestIP);
+  const match = best.label === bestCountryCode;
+
+  return match
+    ? `📡 CDN 三角测量: ✅ 最优入口 ${best.label}（${best.pop_code}）与 IP归属 ${bestCountryCode} 一致`
+    : `📡 CDN 三角测量: ❌ 最优入口 ${best.label}（${best.pop_code}）与 IP归属 ${bestCountryCode} 不符`;
+}
+
 
   // 第四段JS
   function calculateSpoofScore(ipapi, delayDiff, osMismatch, geoNote, cdnMismatch, webrtcMismatch) {
