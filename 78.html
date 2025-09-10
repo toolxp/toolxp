@@ -1362,7 +1362,9 @@ await sleep(500);
     ];
 
     showResultHTML(items, spoofResult.score);
-	flashUpdate("✅ 检测完成！");  
+	// ✅ 自动清空提示区域
+    statusText.textContent = "";
+    finalResult.textContent = "";
   }
 
 	
