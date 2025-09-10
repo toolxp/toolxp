@@ -547,10 +547,8 @@ async function runCDNTriangleMeasurement(visitorIP) {
       fetch(url)
         .then(res => res.json())
         .then(json => ({
-          label,
           rtt: json.rtt ?? null,
-          pop_label: json.pop_label ?? "Unknown",
-          pop_code: json.pop_code ?? "Unknown"
+          pop_label: json.pop_label ?? "Unknown"
         }))
         .catch(() => null),
       3000
@@ -559,14 +557,12 @@ async function runCDNTriangleMeasurement(visitorIP) {
 
   const results = await Promise.all(fetchTasks);
   const valid = results.filter(r => r && typeof r.rtt === "number");
-  if (!valid.length) return "📡 CDN 三角测量: 检测失败 ❌";
+  if (!valid.length) return "❓ 未识别";
 
   const best = valid.sort((a, b) => a.rtt - b.rtt)[0];
   const match = best.pop_label === visitorCountryCode;
 
-  return match
-    ? `📡 CDN 三角测量: ✅ 最优入口 ${best.pop_label}（${best.pop_code}）与 IP归属 ${visitorCountryCode} 一致`
-    : `📡 CDN 三角测量: ❌ 最优入口 ${best.pop_label}（${best.pop_code}）与 IP归属 ${visitorCountryCode} 不符`;
+  return match ? "🟢 正常" : "🔴 检测到异常";
 }
 
 
