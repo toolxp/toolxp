@@ -573,6 +573,16 @@ async function runCDNTriangleMeasurement(visitorIP) {
   }
 
   const bestCountryCode = await fetchCountryFromIP(bestIP);
+
+
+// ✅ 调试输出
+console.log("POP IP:", best.ip);
+console.log("POP label:", best.label);
+console.log("IPInfo country:", bestCountryCode);
+
+
+
+	
   const match = best.label === bestCountryCode;
 
   return match
