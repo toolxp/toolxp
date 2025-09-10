@@ -1181,83 +1181,68 @@ async function fetchIPAPIData() {
     }
   }
 
-  async function runCDNTriangleMeasurement(visitorIP) {
-    const visitorCountryCode = IPStore.ipapiData?.country_code ?? "Unknown";
-    if (visitorCountryCode === "CN") {
-		// 默认跳过大陆IP检测
-      return "🟢 正常";
-    }
-
-    const endpoints = {
-      "JP": "https://jp.907000.xyz",
-      "KR": "https://kr.907000.xyz",
-      "HK": "https://hk.sin.pp.ua",
-      "TW": "https://tw.sin.pp.ua",
-      "CA": "https://ca.606006.xyz",
-      "DE": "https://de.606006.xyz",
-      "SG": "https://sg.cdns.nyc.mn",
-      "US": "https://us.cdns.nyc.mn",
-      "NL": "https://nl.wed.pp.ua",
-      "GB": "https://gb.wed.pp.ua",
-      "ID": "https://id.toy.pp.ua",
-      "IN": "https://in.toy.pp.ua",
-      "AU": "https://au.oct.pp.ua",
-      "BR": "https://br.oct.pp.ua",
-      "AE": "https://ae.aly.pp.ua",
-      "ZA": "https://za.aly.pp.ua",
-      "PL": "https://pl.rwx.pp.ua",
-      "TR": "https://tr.rwx.pp.ua"
-    };
-
-    const fetchTasks = Object.entries(endpoints).map(([label, url]) =>
-      withTimeout(
-        fetch(url)
-          .then(res => res.json())
-          .then(json => ({
-            label,
-            rtt: json.rtt ?? null,
-            ip: json.ip ?? "N/A",
-            pop_code: json.pop_code ?? "Unknown"
-          }))
-          .catch(() => ({
-            label,
-            rtt: null,
-            ip: "FetchError",
-            pop_code: "FetchError"
-          })),
-        3000
-      )
-    );
-
-    const results = await Promise.all(fetchTasks);
-    const valid = results.filter(r => r && typeof r.rtt === "number");
-    if (!valid.length) return "📡 CDN 三角测量: 检测失败 ❌";
-
-    const best = valid.sort((a, b) => a.rtt - b.rtt)[0];
-    const bestIP = best?.ip ?? null;
-
-    if (!bestIP || bestIP === "FetchError" || bestIP === "N/A") {
-      return `📡 CDN 三角测量: 最优入口 ${best.label}（${best.pop_code}）无法识别 IP`;
-    }
-
-    const bestCountryCode = await fetchCountryFromIP(bestIP);
-    const match = best.label === bestCountryCode;
-
-    return match
-      ? `📡 CDN 三角测量: ✅ 最优入口 ${best.label}（${best.pop_code}）与 IP归属 ${bestCountryCode} 一致`
-      : `📡 CDN 三角测量: ❌ 最优入口 ${best.label}（${best.pop_code}）与 IP归属 ${bestCountryCode} 不符`;
+async function runCDNTriangleMeasurement(visitorIP) {
+  const visitorCountryCode = IPStore.ipapiData?.country_code ?? "Unknown";
+  if (visitorCountryCode === "CN") {
+    // 默认跳过大陆IP检测
+    return "🟢 正常";
   }
+
+  const endpoints = {
+    "JP": "https://jp.907000.xyz",
+    "KR": "https://kr.907000.xyz",
+    "HK": "https://hk.sin.pp.ua",
+    "TW": "https://tw.sin.pp.ua",
+    "CA": "https://ca.606006.xyz",
+    "DE": "https://de.606006.xyz",
+    "SG": "https://sg.cdns.nyc.mn",
+    "US": "https://us.cdns.nyc.mn",
+    "NL": "https://nl.wed.pp.ua",
+    "GB": "https://gb.wed.pp.ua",
+    "ID": "https://id.toy.pp.ua",
+    "IN": "https://in.toy.pp.ua",
+    "AU": "https://au.oct.pp.ua",
+    "BR": "https://br.oct.pp.ua",
+    "AE": "https://ae.aly.pp.ua",
+    "ZA": "https://za.aly.pp.ua",
+    "PL": "https://pl.rwx.pp.ua",
+    "TR": "https://tr.rwx.pp.ua"
+  };
+
+  const fetchTasks = Object.entries(endpoints).map(([label, url]) =>
+    withTimeout(
+      fetch(url)
+        .then(res => res.json())
+        .then(json => ({
+          rtt: json.rtt ?? null,
+          pop_label: json.pop_label ?? "Unknown"
+        }))
+        .catch(() => null),
+      3000
+    )
+  );
+
+  const results = await Promise.all(fetchTasks);
+  const valid = results.filter(r => r && typeof r.rtt === "number");
+  if (!valid.length) return "❓ 未识别";
+
+  const best = valid.sort((a, b) => a.rtt - b.rtt)[0];
+  const match = best.pop_label === visitorCountryCode;
+
+  return match ? "🟢 正常" : "🔴 检测到异常";
+}
+
 
   // 第四段JS
   function calculateSpoofScore(ipapi, delayDiff, osMismatch, geoNote, cdnMismatch, webrtcMismatch) {
     let score = 0;
 
     if (ipapi?.is_tor) score += 100;
-    if (ipapi?.is_vpn) score += 30;
-    if (ipapi?.is_proxy) score += 30;
-    if (ipapi?.is_crawler) score += 10;
-    if (ipapi?.is_abuser) score += 10;
-    if (ipapi?.is_datacenter) score += 10;
+    if (ipapi?.is_vpn) score += 20;
+    if (ipapi?.is_proxy) score += 20;
+    if (ipapi?.is_crawler) score += 5;
+    if (ipapi?.is_abuser) score += 5;
+    if (ipapi?.is_datacenter) score += 5;
 
     const browserTZ = getBrowserTimezone();
     const ipTZ = ipapi?.timezone ?? null;
@@ -1265,7 +1250,7 @@ async function fetchIPAPIData() {
     if (tzMismatch) score += 5;
 
     if (delayDiff !== null && delayDiff > 90) score += 20;
-    if (osMismatch === true) score += 50;
+    if (osMismatch === true) score += 35;
     if (geoNote === "异常 ❌") score += 30;
     if (cdnMismatch === true) score += 50;
     if (webrtcMismatch === true) score += 50;
@@ -1323,28 +1308,30 @@ await sleep(500);
     }
 
     const ref = GEO_BASELINE?.[countryCode]?.[CONFIG.vpsRegion];
-    if (countryCode !== "CN") {
-      if (!ref) {
-        geoNote = `❓ 未识别（无 ${countryCode} → ${CONFIG.vpsRegion} 样本）`;
-      } else if (typeof pingRTT !== "number" || typeof wsRTT !== "number") {
-        geoNote = "❓ 未识别（链路测量失败）";
-      } else {
-        const { expectedRTT, tolerance } = ref;
-        const httpExceeds = pingRTT > expectedRTT + tolerance;
-        const wsExceeds = wsRTT > expectedRTT + tolerance;
-        geoNote = (httpExceeds || wsExceeds) ? "异常 ❌" : "正常 ✅";
-      }
-    }
+if (countryCode !== "CN") {
+  if (!ref) {
+    geoNote = `❓ 未识别（无 ${countryCode} → ${CONFIG.vpsRegion} 样本）`;
+  } else if (pingRTT == null || wsRTT == null || isNaN(pingRTT) || isNaN(wsRTT)) {
+    geoNote = "❓ 未识别（链路测量失败）";
+  } else {
+    const { expectedRTT, tolerance } = ref;
+    const httpExceeds = pingRTT > expectedRTT + tolerance;
+    const wsExceeds = wsRTT > expectedRTT + tolerance;
+    geoNote = (httpExceeds || wsExceeds) ? "异常 ❌" : "正常 ✅";
+  }
+}
+
 
     const webrtcResult = compareAllIPs();
-    const spoofResult = calculateSpoofScore(
-      ipapi,
-      delayDiff,
-      osMismatch,
-      geoNote,
-      cdnNoteRaw?.includes("❌"),
-      webrtcResult.status.includes("🔴")
-    );
+const spoofResult = calculateSpoofScore(
+  ipapi,
+  delayDiff,
+  osMismatch,
+  geoNote === "异常 ❌",
+  cdnNoteRaw?.includes("🔴"),
+  webrtcResult.status.includes("🔴")
+);
+
 
     const items = [
       ["是否标记为 TOR", ipapi?.is_tor ? "🔴 已标记" : "🟢 未标记", ipapi?.is_tor ? "#fb0000" : "#00ff22"],
@@ -1357,7 +1344,7 @@ await sleep(500);
       ["指纹真实性", osMismatch === true ? "🔴 检测到异常" : osMismatch === false ? "🟢 正常" : "❓ 未识别", osMismatch === true ? "#fb0000" : "#00ff22"],
       ["链路延迟测量", delayDiff !== null && delayDiff > 90 ? "🔴 检测到异常" : "🟢 正常", delayDiff !== null && delayDiff > 90 ? "#fb0000" : "#00ff22"],
       ["地理位置延迟检测", geoNote === "异常 ❌" ? "🔴 检测到异常" : geoNote.includes("❓") ? "❓ 未识别" : "🟢 正常", geoNote === "异常 ❌" ? "#fb0000" : geoNote.includes("❓") ? "#fffb00" : "#00ff22"],
-      ["POP 最优入口检测", cdnNoteRaw?.includes("❌") ? "🔴 检测到异常" : cdnNoteRaw ?? "❓ 未识别", cdnNoteRaw?.includes("❌") ? "#fb0000" : "#00ff22"],
+      ["POP 最优入口检测", cdnNoteRaw ?? "❓ 未识别", cdnNoteRaw?.includes("🔴") ? "#fb0000" : "#00ff22"],
       ["WebRTC 是否泄露", webrtcResult.status, webrtcResult.color]
     ];
 
@@ -1394,8 +1381,6 @@ async function runAnalysis() {
   detectBtn.addEventListener("click", runAnalysis);
 });
 </script>
-
-
 
 
 <!-- 开发者工具 -->
