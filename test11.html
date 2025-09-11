@@ -642,7 +642,9 @@ if (countryCode !== "CN") {
 }
 
 
-    const webrtcResult = compareAllIPs();
+	  
+
+const webrtcResult = compareAllIPs();
 const spoofResult = calculateSpoofScore(
   ipapi,
   delayDiff,
@@ -652,6 +654,19 @@ const spoofResult = calculateSpoofScore(
   webrtcResult.status.includes("🔴")
 );
 
+// ✅ 添加在这里
+console.log("评分详情：", {
+  is_vpn: ipapi?.is_vpn,
+  is_datacenter: ipapi?.is_datacenter,
+  tzMismatch,
+  delayDiff,
+  osMismatch,
+  geoNote,
+  cdnMismatch: cdnNoteRaw?.includes("🔴"),
+  webrtcMismatch: webrtcResult.status.includes("🔴")
+});
+
+	  
 
     const items = [
       ["是否标记为 TOR", ipapi?.is_tor ? "🔴 已标记" : "🟢 未标记", ipapi?.is_tor ? "#fb0000" : "#00ff22"],
