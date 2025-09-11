@@ -1042,8 +1042,10 @@ async function fetchIPAPIData() {
     "https://uncloak1.huangjie.ggff.net",
     "https://uncloak2.huangjie.ggff.net",
     "https://uncloak3.huangjie.ggff.net",
-    "https://api.ipapi.is",
-    "https://uncloak3.huangjie.ggff.net"	  
+    "https://fwz0.loc.pp.ua",
+    "https://api.ipapi.is",	  
+    "https://fwz1.loc.pp.ua",
+    "https://api.ipapi.is"
   ];
 
   for (const url of workerList) {
@@ -1238,7 +1240,7 @@ async function runCDNTriangleMeasurement(visitorIP) {
 
     if (delayDiff !== null && delayDiff > 90) score += 20;
     if (osMismatch === true) score += 35;
-    if (geoNote === "异常 ❌") score += 35;
+    if (geoNote === true) score += 35;
     if (cdnMismatch === true) score += 35;
     if (webrtcMismatch === true) score += 35;
 
@@ -1307,9 +1309,9 @@ if (countryCode !== "CN") {
     geoNote = (httpExceeds || wsExceeds) ? "异常 ❌" : "正常 ✅";
   }
 }
+	  
 
-
-    const webrtcResult = compareAllIPs();
+const webrtcResult = compareAllIPs();
 const spoofResult = calculateSpoofScore(
   ipapi,
   delayDiff,
@@ -1318,7 +1320,7 @@ const spoofResult = calculateSpoofScore(
   cdnNoteRaw?.includes("🔴"),
   webrtcResult.status.includes("🔴")
 );
-
+	  
 
     const items = [
       ["是否标记为 TOR", ipapi?.is_tor ? "🔴 已标记" : "🟢 未标记", ipapi?.is_tor ? "#fb0000" : "#00ff22"],
