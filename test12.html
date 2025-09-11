@@ -654,17 +654,17 @@ const spoofResult = calculateSpoofScore(
   webrtcResult.status.includes("🔴")
 );
 
-// ✅ 添加在这里
 console.log("评分详情：", {
   is_vpn: ipapi?.is_vpn,
   is_datacenter: ipapi?.is_datacenter,
-  tzMismatch,
+  tzMismatch: spoofResult.tzMismatch, // ✅ 正确引用
   delayDiff,
   osMismatch,
   geoNote,
   cdnMismatch: cdnNoteRaw?.includes("🔴"),
   webrtcMismatch: webrtcResult.status.includes("🔴")
 });
+
 
 	  
 
