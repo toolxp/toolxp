@@ -1229,20 +1229,20 @@ async function runCDNTriangleMeasurement(visitorIP) {
     if (ipapi?.is_tor) score += 100;
     if (ipapi?.is_vpn) score += 15;
     if (ipapi?.is_proxy) score += 15;
-    if (ipapi?.is_crawler) score += 5;
-    if (ipapi?.is_abuser) score += 5;
-    if (ipapi?.is_datacenter) score += 5;
+    if (ipapi?.is_crawler) score += 10;
+    if (ipapi?.is_abuser) score += 10;
+    if (ipapi?.is_datacenter) score += 10;
 
     const browserTZ = getBrowserTimezone();
     const ipTZ = ipapi?.timezone ?? null;
     const tzMismatch = ipTZ && ipTZ !== browserTZ;
     if (tzMismatch) score += 5;
 
-    if (delayDiff !== null && delayDiff > 90) score += 20;
+    if (delayDiff !== null && delayDiff > 90) score += 25;
     if (osMismatch === true) score += 35;
-    if (geoNote === true) score += 35;
-    if (cdnMismatch === true) score += 35;
-    if (webrtcMismatch === true) score += 35;
+    if (geoNote === true) score += 45;
+    if (cdnMismatch === true) score += 55;
+    if (webrtcMismatch === true) score += 30;
 
     return {
       score: Math.min(score, 100),
@@ -1323,18 +1323,18 @@ const spoofResult = calculateSpoofScore(
 	  
 
     const items = [
-      ["是否标记为 TOR", ipapi?.is_tor ? "🔴 已标记" : "🟢 未标记", ipapi?.is_tor ? "#fb0000" : "#00ff22"],
-      ["是否标记为 VPN", ipapi?.is_vpn ? "🔴 已标记" : "🟢 未标记", ipapi?.is_vpn ? "#fb0000" : "#00ff22"],
-      ["是否标记为 代理", ipapi?.is_proxy ? "🔴 已标记" : "🟢 未标记", ipapi?.is_proxy ? "#fb0000" : "#00ff22"],
+      ["时区是否一致", spoofResult.tzMismatch ? "🔴 检测到异常" : "🟢 正常", spoofResult.tzMismatch ? "#fb0000" : "#00ff22"],
       ["是否标记为 爬虫", ipapi?.is_crawler ? "🔴 已标记" : "🟢 未标记", ipapi?.is_crawler ? "#fb0000" : "#00ff22"],
       ["是否标记为 滥用IP", ipapi?.is_abuser ? "🔴 已标记" : "🟢 未标记", ipapi?.is_abuser ? "#fb0000" : "#00ff22"],
-      ["是否标记为 数据中心", ipapi?.is_datacenter ? "🔴 已标记" : "🟢 未标记", ipapi?.is_datacenter ? "#fb0000" : "#00ff22"],
-      ["时区是否一致", spoofResult.tzMismatch ? "🔴 检测到异常" : "🟢 正常", spoofResult.tzMismatch ? "#fb0000" : "#00ff22"],
-      ["指纹真实性", osMismatch === true ? "🔴 检测到异常" : osMismatch === false ? "🟢 正常" : "❓ 未识别", osMismatch === true ? "#fb0000" : "#00ff22"],
+      ["是否标记为 数据中心", ipapi?.is_datacenter ? "🔴 已标记" : "🟢 未标记", ipapi?.is_datacenter ? "#fb0000" : "#00ff22"],		
+      ["是否标记为 VPN", ipapi?.is_vpn ? "🔴 已标记" : "🟢 未标记", ipapi?.is_vpn ? "#fb0000" : "#00ff22"],
+      ["是否标记为 代理", ipapi?.is_proxy ? "🔴 已标记" : "🟢 未标记", ipapi?.is_proxy ? "#fb0000" : "#00ff22"],
       ["链路延迟测量", delayDiff !== null && delayDiff > 90 ? "🔴 检测到异常" : "🟢 正常", delayDiff !== null && delayDiff > 90 ? "#fb0000" : "#00ff22"],
+      ["WebRTC 是否泄露", webrtcResult.status, webrtcResult.color],
+      ["指纹真实性", osMismatch === true ? "🔴 检测到异常" : osMismatch === false ? "🟢 正常" : "❓ 未识别", osMismatch === true ? "#fb0000" : "#00ff22"],
       ["地理位置延迟检测", geoNote === "异常 ❌" ? "🔴 检测到异常" : geoNote.includes("❓") ? "❓ 未识别" : "🟢 正常", geoNote === "异常 ❌" ? "#fb0000" : geoNote.includes("❓") ? "#fffb00" : "#00ff22"],
       ["POP 最优入口检测", cdnNoteRaw ?? "❓ 未识别", cdnNoteRaw?.includes("🔴") ? "#fb0000" : "#00ff22"],
-      ["WebRTC 是否泄露", webrtcResult.status, webrtcResult.color]
+      ["是否标记为 TOR", ipapi?.is_tor ? "🔴 已标记" : "🟢 未标记", ipapi?.is_tor ? "#fb0000" : "#00ff22"]		
     ];
 
     showResultHTML(items, spoofResult.score);
