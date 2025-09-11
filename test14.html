@@ -571,7 +571,7 @@ async function runCDNTriangleMeasurement(visitorIP) {
 
     if (delayDiff !== null && delayDiff > 90) score += 20;
     if (osMismatch === true) score += 35;
-    if (geoNote === "异常 ❌") score += 35;
+    if (geoNote === true) score += 35;
     if (cdnMismatch === true) score += 35;
     if (webrtcMismatch === true) score += 35;
 
