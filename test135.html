@@ -189,36 +189,72 @@ window.addEventListener("DOMContentLoaded", () => {
     vpsRegion: "US"
   };
 
-  const GEO_BASELINE = {
-    "AE": { "US": { expectedRTT: 239, tolerance: 100 } },
-    "AT": { "US": { expectedRTT: 161, tolerance: 100 } },
-    "AU": { "US": { expectedRTT: 221, tolerance: 100 } },
-    "BD": { "US": { expectedRTT: 232, tolerance: 100 } },
-    "BR": { "US": { expectedRTT: 229, tolerance: 100 } },
-    "CA": { "US": { expectedRTT: 64, tolerance: 60 } },
-    "CH": { "US": { expectedRTT: 159, tolerance: 100 } },
-    "CL": { "US": { expectedRTT: 146, tolerance: 60 } },
-    "CY": { "US": { expectedRTT: 206, tolerance: 100 } },
-    "DE": { "US": { expectedRTT: 139, tolerance: 60 } },
-    "ES": { "US": { expectedRTT: 150, tolerance: 100 } },
-    "FR": { "US": { expectedRTT: 133, tolerance: 60 } },
-    "GB": { "US": { expectedRTT: 133, tolerance: 60 } },
-    "HK": { "US": { expectedRTT: 55, tolerance: 70 } },
-    "IL": { "US": { expectedRTT: 200, tolerance: 100 } },
-    "IN": { "US": { expectedRTT: 211, tolerance: 100 } },
-    "IR": { "US": { expectedRTT: 229, tolerance: 100 } },
-    "JP": { "US": { expectedRTT: 107, tolerance: 60 } },
-    "KR": { "US": { expectedRTT: 141, tolerance: 60 } },
-    "MA": { "US": { expectedRTT: 161, tolerance: 100 } },
-    "NL": { "US": { expectedRTT: 138, tolerance: 60 } },
-    "NO": { "US": { expectedRTT: 151, tolerance: 100 } },
-    "RO": { "US": { expectedRTT: 176, tolerance: 100 } },
-    "SG": { "US": { expectedRTT: 178, tolerance: 100 } },
-    "TH": { "US": { expectedRTT: 201, tolerance: 100 } },
-    "TR": { "US": { expectedRTT: 216, tolerance: 100 } },
-    "TW": { "US": { expectedRTT: 136, tolerance: 60 } },
-    "US": { "US": { expectedRTT: 60, tolerance: 60 } }
-  };
+const GEO_BASELINE = {
+  "AE": { "US": { expectedRTT: 239, tolerance: 100 } }, // 阿联酋
+  "AT": { "US": { expectedRTT: 161, tolerance: 100 } }, // 奥地利
+  "AU": { "US": { expectedRTT: 221, tolerance: 100 } }, // 澳大利亚
+  "BD": { "US": { expectedRTT: 232, tolerance: 100 } }, // 孟加拉国
+  "BR": { "US": { expectedRTT: 229, tolerance: 100 } }, // 巴西
+  "CA": { "US": { expectedRTT: 64, tolerance: 60 } }, // 加拿大
+  "CH": { "US": { expectedRTT: 159, tolerance: 100 } }, // 瑞士
+  "CL": { "US": { expectedRTT: 146, tolerance: 60 } }, // 智利
+  "CY": { "US": { expectedRTT: 206, tolerance: 100 } }, // 塞浦路斯
+  "DE": { "US": { expectedRTT: 139, tolerance: 60 } }, // 德国
+  "ES": { "US": { expectedRTT: 150, tolerance: 100 } }, // 西班牙
+  "FR": { "US": { expectedRTT: 133, tolerance: 60 } }, // 法国
+  "GB": { "US": { expectedRTT: 133, tolerance: 60 } }, // 英国
+  "HK": { "US": { expectedRTT: 55, tolerance: 70 } }, // 香港
+  "IL": { "US": { expectedRTT: 200, tolerance: 100 } }, // 以色列
+  "IN": { "US": { expectedRTT: 211, tolerance: 100 } }, // 印度
+  "IR": { "US": { expectedRTT: 229, tolerance: 100 } }, // 伊朗
+  "JP": { "US": { expectedRTT: 107, tolerance: 60 } }, // 日本
+  "KR": { "US": { expectedRTT: 141, tolerance: 60 } }, // 韩国
+  "MA": { "US": { expectedRTT: 161, tolerance: 100 } }, // 摩洛哥
+  "NL": { "US": { expectedRTT: 138, tolerance: 60 } }, // 荷兰
+  "NO": { "US": { expectedRTT: 151, tolerance: 100 } }, // 挪威
+  "RO": { "US": { expectedRTT: 176, tolerance: 100 } }, // 罗马尼亚
+  "SG": { "US": { expectedRTT: 178, tolerance: 100 } }, // 新加坡
+  "TH": { "US": { expectedRTT: 201, tolerance: 100 } }, // 泰国
+  "TR": { "US": { expectedRTT: 216, tolerance: 100 } }, // 土耳其
+  "TW": { "US": { expectedRTT: 136, tolerance: 60 } }, // 台湾
+  "US": { "US": { expectedRTT: 60, tolerance: 60 } }, // 美国
+  "RU": { "US": { expectedRTT: 179, tolerance: 100 } }, // 俄罗斯
+  "UA": { "US": { expectedRTT: 176, tolerance: 100 } }, // 乌克兰
+  "ZA": { "US": { expectedRTT: 273, tolerance: 100 } }, // 南非
+  "NZ": { "US": { expectedRTT: 138, tolerance: 100 } }, // 新西兰
+  "GR": { "US": { expectedRTT: 187, tolerance: 100 } }, // 希腊
+  "FI": { "US": { expectedRTT: 165, tolerance: 100 } }, // 芬兰
+  "PL": { "US": { expectedRTT: 165, tolerance: 100 } }, // 波兰
+  "IT": { "US": { expectedRTT: 152, tolerance: 100 } }, // 意大利
+  "IE": { "US": { expectedRTT: 149, tolerance: 100 } }, // 爱尔兰
+  "BE": { "US": { expectedRTT: 138, tolerance: 100 } }, // 比利时
+  "PT": { "US": { expectedRTT: 171, tolerance: 100 } }, // 葡萄牙
+  "CZ": { "US": { expectedRTT: 170, tolerance: 100 } }, // 捷克
+  "LU": { "US": { expectedRTT: 148, tolerance: 100 } }, // 卢森堡
+  "BG": { "US": { expectedRTT: 167, tolerance: 100 } }, // 保加利亚
+  "MD": { "US": { expectedRTT: 184, tolerance: 100 } }, // 摩尔多瓦
+  "HR": { "US": { expectedRTT: 162, tolerance: 100 } }, // 克罗地亚
+  "DK": { "US": { expectedRTT: 142, tolerance: 100 } }, // 丹麦
+  "EE": { "US": { expectedRTT: 154, tolerance: 100 } }, // 爱沙尼亚
+  "KZ": { "US": { expectedRTT: 237, tolerance: 100 } }, // 哈萨克斯坦
+  "AM": { "US": { expectedRTT: 197, tolerance: 100 } }, // 亚美尼亚
+  "AZ": { "US": { expectedRTT: 221, tolerance: 100 } }, // 阿塞拜疆
+  "NG": { "US": { expectedRTT: 237, tolerance: 100 } }, // 尼日利亚
+  "PE": { "US": { expectedRTT: 137, tolerance: 100 } }, // 秘鲁
+  "CO": { "US": { expectedRTT: 94, tolerance: 100 } },  // 哥伦比亚
+  "AR": { "US": { expectedRTT: 146, tolerance: 100 } }, // 阿根廷
+  "PH": { "US": { expectedRTT: 173, tolerance: 100 } }, // 菲律宾（马尼拉，稳定无丢包）
+  "EG": { "US": { expectedRTT: 188, tolerance: 100 } }, // 埃及（开罗，稳定无丢包）
+  "HU": { "US": { expectedRTT: 157, tolerance: 80 } }, // 匈牙利
+  "LT": { "US": { expectedRTT: 172, tolerance: 80 } }, // 立陶宛
+  "RS": { "US": { expectedRTT: 172, tolerance: 80 } }, // 塞尔维亚
+  "SI": { "US": { expectedRTT: 161, tolerance: 80 } }, // 斯洛文尼亚
+  "SE": { "US": { expectedRTT: 152, tolerance: 60 } }, // 瑞典
+  "VN": { "US": { expectedRTT: 200, tolerance: 100 } }, // 越南（Ho Chi Minh 实测 203.9ms）
+  "ID": { "US": { expectedRTT: 190, tolerance: 120 } }, // 印度尼西亚（Jakarta 实测 186.9ms）
+  "MY": { "US": { expectedRTT: 180, tolerance: 100 } } // 马来西亚
+};
+
 
   const IPStore = {
     webrtc: null,
