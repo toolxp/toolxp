@@ -859,9 +859,9 @@ document.addEventListener("DOMContentLoaded", function () {
         { id: "cn2", label: "②", url: "https://app.netart.cn/network-panel/ip.ajax", parse: (data) => data.data?.ip || "未知", type: "json" },
         { id: "us1", label: "③", url: "https://api.vore.top/api/IPdata", parse: (data) => data.ipinfo.text || "未知", type: "json" }, // 修改这里
         { id: "us2", label: "④", url: "https://jkapi.com/api/zz_ip", parse: (data) => data.data.addr || "未知", type: "json" }, // 修改这里
-        { id: "user-ipv4", label: "⑤", url: "https://api.ipify.org?format=json", parse: (data) => data.ip || "未知", type: "json" },
+        { id: "user-ipv4", label: "⑤", url: "https://api.pearktrue.cn/api/ip/high", parse: (data) => data.ip || "未知", type: "json" },
         { id: "webrtc-ip", label: "⑥", parse: () => "检测中...", type: "webrtc" },
-        { id: "user-ipv6", label: "⑦", url: "https://api6.ipify.org?format=json", parse: (data) => data.ip || "未知", type: "json" },
+        { id: "user-ipv6", label: "⑦", url: "https://api-ipv6.ip.sb/ip", parse: (data) => data.trim() || "未知", type: "text" },
         { id: "user-ipv6-test", label: "⑧", url: "https://ipv6.ddnspod.com", parse: (data) => data, type: "text" },
         { id: "user-ipv6-new", label: "⑨", url: "https://ipv6.losangeles.test-ipv6.com/ip/?callback=jsonpIPv6Callback", type: "jsonp" }
     ];
