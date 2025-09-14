@@ -1008,7 +1008,7 @@ window.addEventListener("DOMContentLoaded", () => {
     wsURL: "wss://us.cti.pp.ua/ws",
     tcpipAPI: "https://tcp.cti.pp.ua/classify",
     wsTimeout: 8000,
-    webrtcTimeout: 8000,
+    webrtcTimeout: 6000,
     stunServers: [
       { urls: "stun:stun.ss.aaak.dpdns.org:3478" },
       { urls: "stun:stun.cc.aaak.dpdns.org:3478" },
@@ -1165,7 +1165,7 @@ footer.style.marginTop = "50px";
 footer.style.fontSize = "21px";
 footer.style.textAlign = "center";
 footer.style.fontWeight = "bold";
-footer.innerHTML = `🎯 使用 VPN/代理 的可能性为：<strong style="color:${color}">${score}%</strong>`;
+footer.innerHTML = `🛡 使用 VPN/代理 的可能性为：<strong style="color:${color}">${score}%</strong>`;
 
 
     container.appendChild(table);
@@ -1237,6 +1237,9 @@ async function fetchIPAPIData() {
   const workerList = [
     "https://uncloak1.huangjie.ggff.net",
     "https://uncloak2.huangjie.ggff.net",
+	"https://api.ipapi.is",	  
+	"https://fwz1.loc.pp.ua",  
+	"https://fwz0.loc.pp.ua",  
     "https://uncloak3.huangjie.ggff.net",
     "https://fwz0.loc.pp.ua",
     "https://api.ipapi.is",	  
@@ -1450,7 +1453,7 @@ async function runCDNTriangleMeasurement(visitorIP) {
     flashUpdate("⏳ 正在初始化检测，请稍候…");
     await sleep(500);
 
-flashUpdate("🌐 正在查询 IP 信誉数据库…");
+flashUpdate("📡 正在查询多个开源 IP 信誉数据库…");
 const ipapi = await fetchIPAPIData(); // ✅ 不加 withTimeout
 if (!ipapi?.ip) {
   flashUpdate("❌ 网络连接不稳定，检测被中断");
@@ -1459,7 +1462,7 @@ if (!ipapi?.ip) {
 await sleep(500);
 
 
-    flashUpdate("📦 正在进行 TCP/IP 指纹识别…");
+    flashUpdate("📡 正在进行 TCP/TLS 指纹识别…");
     const osMismatch = await withTimeout(fetchTCPFingerprint(), 10000);
     await sleep(500);
 
@@ -1467,7 +1470,7 @@ await sleep(500);
     await detectWebRTCWrapper();
     await sleep(500);
 
-    flashUpdate("🗺️ 正在进行链路延迟测量…");
+    flashUpdate("📡 正在进行链路延迟测量…");
     const pingRTT = await withTimeout(measurePingRTT(CONFIG.pingURL), 6000);
     if (pingRTT === null) flashUpdate("⚠️ Ping 测量失败，跳过延迟分析");
     await sleep(500);
@@ -1487,7 +1490,7 @@ await sleep(500);
 		// 默认跳过大陆IP检测
       cdnNoteRaw = "🟢 正常";
     } else {
-      flashUpdate("📡 正在进行 POP 最优入口检测…");
+      flashUpdate("📡 正在进行全球 CDN POP 最优入口检测…");
       cdnNoteRaw = await withTimeout(runCDNTriangleMeasurement(ipapi.ip), 15000);
       await sleep(500);
     }
