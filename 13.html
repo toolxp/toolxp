@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP 黑名单检测工具 | 多源查询 Spamhaus/Spamcop/Barracuda 等 | ToolXP</title>
+<meta name="description" content="一键检测你的 IP 是否被列入黑名单，支持查询 Spamhaus、Spamcop、Barracuda 等多个数据库，帮助识别滥用风险与邮件投递问题。">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://toolxp.com/ip-blacklist">
+<link rel="icon" href="https://code.907000.xyz/logo.png" type="image/png">
+<meta name="keywords" content="IP 黑名单检测, Spamhaus 查询, Barracuda 黑名单, 邮件服务器黑名单, DNSBL 查询, ToolXP 工具">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "IP 黑名单检测工具",
+  "operatingSystem": "Web",
+  "applicationCategory": "SecurityApplication",
+  "url": "https://toolxp.com/ip-blacklist",
+  "description": "查询你的 IP 是否被列入黑名单，支持 Spamhaus、Spamcop、Barracuda 等多个数据库，帮助识别邮件投递失败、访问受限等问题。",
+  "creator": {
+    "@type": "Organization",
+    "name": "ToolXP"
+  },
+  "inLanguage": "zh-CN"
+}
+</script>
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "什么是 IP 黑名单？和 VPN 有什么区别？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "IP 黑名单用于记录恶意或可疑 IP，VPN 是保护隐私的工具。某些 VPN 的出口 IP 也可能被列入黑名单。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "为什么我的 IP 地址会被列入黑名单？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "可能原因包括发送垃圾邮件、网络攻击、邮件配置错误或共享 IP 被滥用。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "我的 IP 被列入黑名单了，我该怎么办？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "你可以联系 ISP 更换 IP、检查邮件配置、提交解封请求，并加强网络安全防护。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "IP 黑名单会影响网站访问吗？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "会影响。部分网站可能拒绝访问、显示安全警告，甚至导致支付失败或注册受限。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "黑名单如何影响邮件发送？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "邮件可能被标记为垃圾、无法送达或被拒收，建议检查 SPF、DKIM、DMARC 配置并申请移除黑名单。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "这个黑名单检测工具是如何工作的？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "工具会查询 50 多个主流黑名单数据库（如 Spamhaus、Spamcop、Barracuda），并快速返回结果。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "IP 黑名单是永久的吗？可以解除吗？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "大多数黑名单是临时的，可自动清除或通过人工申请解除。反复违规可能导致长期封锁。"
+      }
+    }
+  ]
+}
+</script>
+
+
+<style>
+body {
+    background: #0e111b;
+    margin: 0;
+    min-height: 100vh;
+    background-image: linear-gradient(90deg, #3f3f3f13 1px, transparent 1px), /* 垂直线条 */ linear-gradient(180deg, #3f3f3f13 1px, transparent 1px), /* 水平线条 */ linear-gradient(135deg, #010202, #080c15, #0c101a, #111521, #0c101a, #080c15, #010202);
+    background-size: 60px 60px, 60px 60px, cover;
+    background-repeat: repeat, repeat, no-repeat;
+    background-attachment: fixed;
+    background-blend-mode: screen, screen, normal;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #0e111b10;
+    padding: 0.5rem 1.5rem;
+    border-bottom: 1px solid #273367;
+    flex-wrap: wrap;
+}
+
+  .sitename {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #ff8033;
+  }
+
+  .nav-toggle {
+    display: none;
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 1rem;
+    font-size: 17px;
+    flex-wrap: nowrap; /* 防止导航文本换行 */
+    white-space: nowrap; /* 确保文本不换行 */
+  }
+
+  .nav-links a {
+    text-decoration: none;
+    padding: 0.5rem;
+    color: #6fcdfb;
+  }
+
+  /* 子菜单的新样式 */
+  .submenu {
+    flex-direction: column;
+    position: absolute;
+    width: 100%;
+    border-radius: 4px;
+    margin-top: 15px;
+    background-color: transparent;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-20px);
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease,
+      visibility 0.3s ease;
+    min-width: 0; /* 取消最小宽度限制 */
+    padding: 0; /* 去除多余的内边距 */
+    width: auto; /* 让子菜单宽度自适应 */
+  }
+
+  .submenu a {
+    display: block;
+    padding: 0.8rem;
+    color: #6fcdfb;
+    text-align: left;
+    background: transparent;
+  }
+
+  .nav-links a:hover,
+  .submenu a:hover {
+        color: #fffb05;
+/*        transform: scale(1.2); */
+        text-shadow: 0 0 26px rgba(255, 251, 5, 1),
+            0 0 31px rgba(255, 251, 5, 1),
+            0 0 36px rgba(255, 251, 5, 0.7);
+  }
+
+  /* 响应式样式 */
+  @media (max-width: 700px) {
+    .nav-toggle {
+      display: block;
+      color: #05fff6;
+      font-size: 25px;
+    }
+
+    .nav-links {
+      flex-direction: column;
+      width: 100%;
+      display: none;
+      gap: 0;
+    }
+
+    .nav-links.active {
+      display: flex;
+    }
+
+    .nav-links a,
+    .menu-item {
+      width: auto;
+      text-align: center;
+      padding: 1rem;
+      border-top: 1px solid rgba(39, 51, 103);
+    }
+
+    .navbar {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .navbar-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: auto 6% auto 3%;
+      height: 50px;
+    }
+
+    /* 移动子菜单调整 */
+    .submenu {
+      position: static;
+      opacity: 0;
+      transform: translateY(-20px);
+      transition:
+        opacity 0.3s ease,
+        transform 0.3s ease;
+      visibility: hidden;
+      display: none; /* 确保不占用空间 */
+    }
+
+    .submenu.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      display: flex; /* 活动时显示子菜单 */
+    }
+
+    .menu-item {
+      width: auto;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .menu-item a:focus {
+      outline: none;
+    }
+
+    .nav-links a:hover {
+      background-color: transparent;
+      border-radius: 4px;
+    }
+  }
+
+  /* 桌面悬停子菜单 */
+  @media (min-width: 701px) {
+    .nav-links .menu-item {
+      position: relative;
+    }
+
+    .submenu {
+      visibility: hidden; /* 默认隐藏子菜单 */
+      opacity: 0;
+      transform: translateY(-10px);
+      transition:
+        opacity 0.3s ease,
+        transform 0.3s ease,
+        visibility 0.3s ease;
+    }
+
+    .menu-item:hover .submenu {
+      visibility: visible; /* 悬停时显示子菜单 */
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* 防止子菜单消失得太快 */
+    .menu-item:hover .submenu {
+      pointer-events: auto;
+    }
+  }
+
+  .main-content {
+    padding: 10px 20px;
+    margin-top: 30px;
+    height: auto;
+  }
+
+  .containerpost {
+    max-width: 1250px;
+    margin: 0 auto;
+    border-radius: 8px;
+    line-height: 1.6;
+    color: #d1d1d1;
+    --border-color: #95e6ff;
+/*    text-align: center; */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .menu-item {
+    margin-top: auto;
+    margin-bottom: auto;
+    position: relative;
+  }
+</style>
+
+
+
+
+
+<style>
+.zhanshikuang {
+    margin: 30px auto;
+}
+h1 {
+    color: #6fcdfb;
+    text-align: center;
+}
+
+.zhanshikuang p {
+    text-align: center;
+    color: #00b6ff;
+    font-size: 19px;
+    margin-top: 70px;
+}
+
+      footer {
+        padding: 20px 0;
+        text-align: center;
+        margin-top: 100px;
+        color: #999;
+      }
+      footer a, footer p {
+        color: #999;
+        margin: 10px 15px;
+        text-decoration: none;
+        transition: color 0.3s;
+        font-size: 13px;
+      }
+      footer a:hover {
+        color: #00ceff;
+      }
+
+/* 提示框 */
+.tip-box {
+    background-color: #222c3b60;
+    border-left: 5px solid #05ff2d;
+    padding: 15px;
+    margin: 20px auto;
+    border-radius: 8px;
+    font-size: 19px;
+    color: #dddddd;
+    max-width: 875px;
+}
+
+/* 常见问题CSS */
+.faq-section {
+  margin: 40px auto;
+  padding: 0 10px;
+  max-width: 875px;
+}
+
+.faq-section h2 {
+  font-size: 1.5em;
+  text-align: center;
+  margin-bottom: 30px;
+  color: #1ef192;
+}
+
+.faq details {
+  background: #13171a20;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  padding: 15px 20px;
+  cursor: pointer;
+  border: 1px solid #31353b;
+  transition: all 0.3s ease;
+}
+
+.faq summary {
+  font-size: 17px;
+  list-style: none;
+  color: #eee;
+  text-align: center;
+}
+
+.faq p {
+  margin-top: 10px;
+  line-height: 1.6;
+  color: #bbb;
+  font-size: 16px;
+}
+
+.faq li {
+    font-size: 16px;
+    color: #bbb;
+}
+
+.faq details[open] {
+    background: #00000030;
+    border-color: #60b8ff;
+}
+
+.faq details[open] summary {
+    color: #ff6700;
+}
+
+.faq summary:hover {
+    color: #00ceff;
+}
+
+section {
+    width: 95%;
+}
+
+/* 链接 */
+a.green-link {
+  color: #02df02 !important;
+  text-decoration: none !important;
+}
+a.green-link:hover {
+  color: yellow !important;
+}
+
+/* 设置滚动条的总宽度 */
+html::-webkit-scrollbar, 
+table::-webkit-scrollbar, 
+.sidebar-menu.fixed .sidebar-menu-inner::-webkit-scrollbar {
+	   width: 5px !important;
+    background-color: transparent; /* 滚动条背景色 */
+}
+
+table::-webkit-scrollbar {
+	height: 5px !important; /* 指定水平滚动条的高度 */
+    margin-top: 6px !important;
+}
+
+/* 设置滑块默认样式 */
+html::-webkit-scrollbar-thumb, 
+table::-webkit-scrollbar-thumb, 
+.sidebar-menu.fixed .sidebar-menu-inner::-webkit-scrollbar-thumb {
+    background-color: #535c66; /* 滑块默认颜色 */
+    border-radius: 9px; /* 滑块圆角样式 */
+}
+
+/* 滑块悬停时的样式 */
+html::-webkit-scrollbar-thumb:hover, 
+table::-webkit-scrollbar-thumb:hover, 
+.sidebar-menu.fixed .sidebar-menu-inner::-webkit-scrollbar-thumb:hover {
+    background-color: #00ceff; /* 滑块悬停颜色 */
+}
+
+/* firefox滚动条样式 */
+@-moz-document url-prefix() {
+    html {
+        scrollbar-width: thin; 
+        scrollbar-color: #535c66 transparent; /* 默认颜色 */
+		   border-radius: 9px; /* 滑块圆角样式 */
+    }
+
+    table {
+        scrollbar-width: thin;
+        scrollbar-color: #535c66 transparent;
+		   border-radius: 9px; /* 滑块圆角样式 */
+    }
+}
+
+ /* 动画效果 */
+  .engine-loader {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  perspective: 510px;
+  margin: 20px auto;
+}
+
+.inner {
+  position: absolute;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.inner.one {
+  left: 0;
+  top: 0;
+  border-bottom: 3px solid #efeffa;
+  animation: rotate-one 1s linear infinite;
+  transform: rotateX(35deg) rotateY(-45deg);
+}
+.inner.two {
+  right: 0;
+  top: 0;
+  border-right: 3px solid #efeffa;
+  animation: rotate-two 1s linear infinite;
+  transform: rotateX(50deg) rotateY(10deg);
+}
+.inner.three {
+  right: 0;
+  bottom: 0;
+  border-top: 3px solid #efeffa;
+  animation: rotate-three 1s linear infinite;
+  transform: rotateX(35deg) rotateY(55deg);
+}
+
+@keyframes rotate-one {
+  to {
+    transform: rotateX(35deg) rotateY(-45deg) rotateZ(360deg);
+  }
+}
+@keyframes rotate-two {
+  to {
+    transform: rotateX(50deg) rotateY(10deg) rotateZ(360deg);
+  }
+}
+@keyframes rotate-three {
+  to {
+    transform: rotateX(35deg) rotateY(55deg) rotateZ(360deg);
+  }
+}
+
+
+.submenu a {
+    background: #0d111b;
+}
+
+.submenu {
+    z-index: 9999;
+}
+
+html, body {
+    overflow-x: hidden;
+}
+
+.navbar {
+    padding: 0.7rem 1.5rem;
+}
+
+
+.faq details[open] {
+  cursor: default; /* 鼠标悬浮时不显示手指 */
+}
+
+.faq summary {
+  cursor: pointer; /* 鼠标悬浮在 summary 上仍显示手指 */
+}
+
+
+
+
+/* 滑块轨道 */
+input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  width: 200px;
+  height: 7px;
+}
+
+
+/* Chrome / Safari / Edge */
+input[type="range"]::-webkit-slider-runnable-track {
+  background: #535c66;
+  height: 7px;
+  border-radius: 3px;
+}
+
+/* Firefox */
+input[type="range"]::-moz-range-track {
+  background: #535c66;
+  height: 7px;
+  border-radius: 3px;
+}
+
+/* 滑块按钮 */
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  background: #05ff2d;
+  border: 1px solid #05ff2d;
+  border-radius: 50%;
+  margin-top: -4px; /* ✅ 垂直居中关键 */
+  cursor: pointer;
+}
+</style>
+
+
+<!-- IP黑名单 -->
+<style>.content__entry.u-inner { background: #161b21; } input, button { padding: 10px; font-size: 16px; } button { cursor: pointer; } #results { color: #ccc; max-width: 870px; width: 90%; margin: 20px auto 70px auto; overflow-x: auto; } table { width: 100%; border-collapse: collapse; } th, td { border-bottom: 1px solid #31353b; padding: 10px; text-align: left; } th { background-color: #1e215d30; color: yellow; font-size: 18px; } .hidden { display: none; } #results table { display: table !important; width: 100%; border-collapse: collapse; } table td { font-size: 16px; background: #11151a30; } table th { border-bottom: none; } .input-container { display: flex; align-items: center; gap: 10px; margin-top: 60px; margin-bottom: 60px; } input { flex-grow: 1; } input#queryInput { font-size: 17px; background: #00000060; border: 1px solid #31353b; color: #fff; max-width: 280px; margin-left: auto; } button#queryButton { display: block; background: #8d28a5; color: #fff; padding: 6px 16px; margin-right: auto; min-width: 70px; border-radius: 3px; border: none; height: 39px; } button#queryButton:hover { background: #2e93ff; color: #fff; } .blacklist-alert { color: red; font-weight: bold; } button#toggleStarfield { right: 7px; }
+</style>
+
+
+<style>
+#results {
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 875px;
+}
+
+  /* 呼吸灯效果的阴影动画 */
+  @keyframes breathing {
+    0% {
+      box-shadow: 0 0 20px rgba(52, 152, 219, 0.7); /* 初始阴影 */
+    }
+    50% {
+      box-shadow: 0 0 40px rgba(52, 152, 219, 0.2); /* 最大阴影 */
+    }
+    100% {
+      box-shadow: 0 0 20px rgba(52, 152, 219, 0.7); /* 返回初始阴影 */
+    }
+  }
+
+/* 激活呼吸灯效果的类 */
+.breathing-active {
+  animation: breathing 3s ease-in-out infinite;
+}
+</style>
+
+
+</head>
+
+<body>
+<nav class="navbar"><div class="navbar-header"><div class="sitename"><a href="https://toolxp.com" style="font-size: 23px; text-decoration: none; color: #6fcdfb;">ToolXp</a></div><button class="nav-toggle">☰</button></div><div class="nav-links" id="navMenu">
+
+
+<div class="menu-item">
+<div style="display: flex; align-items: center; gap: 0.5rem; font-size: 17px; color: #6fcdfb;">
+  <label for="hueSlider">🎨 调节颜色：</label>
+  <input type="range" id="hueSlider" min="0" max="360" value="0" aria-label="颜色旋转滑块，范围从 0 到 360 度">
+  <span id="hueValue" style="width: 50px;">0°</span>
+</div>
+</div>
+
+<div class="menu-item">
+<div style="display: flex; align-items: center; gap: 0.5rem; font-size: 17px; color: #6fcdfb;">
+  <label for="invertSlider">🌓 调节亮度：</label>
+  <input type="range" id="invertSlider" min="0" max="1" step="0.01" value="0" aria-label="亮度调节滑块，范围从 0 到 1">
+  <span id="invertValue" style="width: 50px;">0.00</span>
+</div>
+</div>
+
+<div class="menu-item"><a href="#">跨境工具</a><div class="submenu"><a href="/ip-leak-test">IP/DNS 泄露检测</a><a href="/browser-security-detection">游览器安全检测</a><a href="/ip-blacklist">IP 黑名单检测</a><a href="/temporary-email">临时邮箱</a><a href="/ip-quality">IP 信誉检测</a><a href="/china-firewall">域名被墙检测</a><a href="/uncloak">反伪装检测</a></div></div>
+
+ <div class="menu-item">
+ <a href="https://toolxp.com">首页</a>
+</div>
+</div></div></nav>
+
+
+
+    <div class="main-content">
+
+    <div class="containerpost">
+        
+
+<!-- h1标题 -->
+<h1>IP 黑名单检测</h1>
+ <section><div class="tip-box">此工具会查询数十个主流黑名单数据库，并迅速返回结果。</div>
+
+<div class="zhanshikuang">
+<p>大多数的数据库只支持 IPv4 ，所以 IPv4 的查询结果才有参考价值！<br>如果你需要查询 IPv6，可以使用 <a href="/ip-quality" target="_blank" class="green-link" aria-label="跳转至 IP质量检测工具页面">IP质量检测工具</a>
+</p>
+</div>
+</section>
+
+    
+<!-- 页面内容 -->
+
+
+
+
+
+
+
+<div class="input-container">
+    <input type="text" id="queryInput" placeholder="输入 IP ">
+    <button id="queryButton" onclick="queryBlacklist()" aria-label="查询 IP 黑名单">查询</button>
+</div>
+
+<!-- 动画提示 -->
+<div id="engine-loader" class="engine-loader" style="display: none;">
+  <div class="inner one"></div>
+  <div class="inner two"></div>
+  <div class="inner three"></div>
+</div>
+
+
+
+
+<div id="results"></div>
+
+
+
+<!-------------------------  常见问题 ------------------------------->
+<section class="faq-section">
+  <h2>常见问题解答</h2>
+  <div class="faq">
+<details> <summary>什么是 IP 黑名单？和 VPN 有什么区别？</summary> <p><strong>IP 黑名单</strong> 是由网络安全机构、网站或服务提供商维护的列表，用于记录有可疑、有恶意或违规行为的 IP 地址。例如，发送垃圾邮件、进行网络攻击或频繁爬取网站内容的 IP，可能会被加入黑名单。一旦被列入，访问某些网站或服务可能会被限制或拒绝。</p>
+
+<p><strong>VPN（虚拟专用网络）</strong> 是一种网络工具，用于加密用户的网络连接，并隐藏真实 IP 地址，从而保护上网隐私。使用 VPN 并不代表恶意行为，它本质上是合法的隐私保护技术（注：极少数国家和地区有明确的限制,请自行查阅相关法律条款）。不过，由于一些用户可能利用 VPN 进行违规操作，某些 VPN 的出口 IP 也可能被加入黑名单。</p>
+
+<p><strong>总结：</strong>IP 黑名单是用来标记/封锁“有问题的 IP 地址”的，而 VPN 是一种“保护隐私、隐藏 IP”的工具。两者不是同一种东西，但在某些情况下可能会有交集。</p> </details>
+
+    <details>
+      <summary>为什么我的 IP 地址会被列入黑名单？</summary>
+      <p>你的 IP 可能因为以下原因被列入黑名单：</p>
+            <ul>
+                <li>你发送了大量未经许可的垃圾邮件。</li>
+                <li>你的 IP 被检测到恶意行为（如扫描网络、攻击网站等）。</li>
+                <li>你的邮件服务器配置错误，导致邮件被误标记为垃圾邮件。</li>
+                <li>你的网络被黑客利用，用于发送恶意流量或垃圾邮件。</li>
+                <li>你使用了共享 IP，而其他用户的行为导致整个 IP 被列入黑名单。</li>
+            </ul>
+    </details>
+    <details>
+      <summary>我的 IP 被列入黑名单了，我该怎么办？</summary>
+      <p> 如果你的 IP 被列入黑名单，你可以：</p>
+            <ul>
+                <li>联系你的 ISP（互联网服务提供商），请求更换新的 IP 地址。</li>
+                <li>检查你的邮件服务器配置，确保 SPF、DKIM 和 DMARC 设置正确。</li>
+                <li>在黑名单数据库的网站上提交 **解封请求**，说明你的情况。</li>
+                <li>如果你的网络被恶意使用，考虑使用防火墙和安全软件保护设备。</li>
+                <li>避免发送未经许可的邮件，并遵守互联网安全规范。</li>
+            </ul>
+    </details>
+    <details>
+      <summary>IP 被列入黑名单会影响网站访问吗？</summary>
+      <p>是的，越来越多的网站和服务会限制恶意 IP 的访问。如果你的 IP 被标记为恶意源：</p>
+            <ul>
+                <li>某些网站可能会 **拒绝你的访问** 或 **显示安全警告**。</li>
+                <li>你的网络速度可能受到限制，影响正常使用。</li>
+                <li>在线支付、论坛注册等可能会失败。</li>
+            </ul>
+<p>如果你的 IP 受限，你可以使用 **VPN 或更换网络** 以绕过黑名单限制。</p>
+    </details>
+    <details>
+      <summary>黑名单如何影响邮件发送？</summary>
+      <p>如果你的邮件服务器 IP 被列入黑名单：</p>
+            <ul>
+                <li>你的邮件可能会被 **自动标记为垃圾邮件**。</li>
+                <li>某些收件人可能 **无法收到你的邮件**。</li>
+                <li>邮件服务器可能会 **拒绝你的邮件**，导致邮件投递失败。</li>
+            </ul>
+<p> 如果你的邮件被列入黑名单，建议检查 **邮件服务器配置** 并联系相关黑名单提供商请求移除。</p>
+    </details>
+    <details>
+      <summary>这个黑名单检测工具是如何工作的？</summary>
+      <p>此工具会查询50多个 **黑名单数据库**（如 Spamhaus、Spamcop、Barracuda 等）。并迅速返回结果。</p>
+    </details>
+    <details>
+      <summary>IP 黑名单是永久的吗？可以解除吗？</summary>
+      <p> 绝大多数 **黑名单都是临时的**，但是否能解除取决于黑名单类型：</p>
+            <ul>
+                <li>有些黑名单会 **自动清除** 过期条目（如 Spamcop 约 24 小时清除）。</li>
+                <li>部分黑名单需要 **手动提交解封请求**，管理员审核后移除。</li>
+                <li>如果你的 IP 反复出现不良行为，可能会被 **长期封锁**。</li>
+            </ul>
+    </details>
+  </div>
+</section>
+<!-- 常见问题结束 -->
+
+
+
+<style>#backToTop{position:fixed;bottom:60px;right:10px;color:#000;border:none;font-size:30px;cursor:pointer;display:none;z-index:1000;background:0 0;outline:0}.tTpB{justify-content:center;position:fixed;right:10px;width:39px;border-radius:50%;cursor:pointer;visibility:hidden;opacity:0;z-index:9999;transform:scale(0);transition:transform .3s ease,opacity .3s ease,visibility .3s ease;top:23%}.tTpB.vbl{visibility:visible;opacity:1;transform:scale(1)}.tTpB:hover{opacity:.8}.tTpB svg{height:100%;width:100%;transform:rotate(-90deg);stroke-width:1.5;cursor:pointer}.tTpB svg .b{fill:transparent;stroke:#6671ff;opacity:.9}.tTpB svg .c{fill:none;stroke:yellow;stroke-dasharray:100 100;stroke-dashoffset:100;stroke-linecap:round}.tTpB svg .d{fill:none;stroke:yellow}.drK .tTpB svg .b{fill:#2d2d30;stroke:#16f9f5}.drK .tTpB svg .c{stroke:#16f9f5}.drK .tTpB svg .d{stroke:#16f9f5}.tTpB{display:flex;align-items:center}</style>
+
+<div class="tTpB" id="backTop" onclick="scrollToTop()">
+  <svg viewBox="0 0 34 34">
+    <circle class="b" cx="17" cy="17" r="15.92"></circle>
+    <circle class="c scrollProgress" cx="17" cy="17" r="15.92"></circle>
+    <path class="line d" d="M15.07,21.06,19.16,17l-4.09-4.06"></path>
+  </svg>
+</div>
+
+
+
+<footer>
+    <p>© 2025 toolxp.com 版权所有</p>
+    <p>
+        <a href="/disclaimer" >免费声明</a> |
+        <a href="/privacy">隐私政策</a>
+    </p>
+</footer>
+
+<!-- 页面内容结束 -->
+    </div><!-- containerpost 结束 -->
+  </div><!-- main-content 结束 -->
+
+
+<!-- 颜色、菜单、顶部、问题 -->
+<script>function _0x3c6e05(_0x13630b,_0x146d49,_0x49e84e,_0x10f59b){return _0x174e(_0x13630b-0x103,_0x146d49);}(function(_0x23d20c,_0x7c2eb){const _0x153594=_0x23d20c();function _0x25b85d(_0xb6817c,_0x5b081,_0x269076,_0x15d4f9){return _0x174e(_0x5b081- -0x210,_0x15d4f9);}function _0x50d6c3(_0x1a10ad,_0x4dc1c2,_0xbab369,_0x4ae08f){return _0x174e(_0xbab369-0x2f3,_0x1a10ad);}while(!![]){try{const _0x44fa70=-parseInt(_0x25b85d(-0x211,-0x210,-0x215,-0x1f6))/0x1+-parseInt(_0x25b85d(-0x218,-0x20f,-0x222,-0x215))/0x2*(parseInt(_0x50d6c3(0x2e7,0x2ee,0x2f5,0x2dd))/0x3)+parseInt(_0x50d6c3(0x310,0x2fb,0x2f6,0x305))/0x4*(parseInt(_0x50d6c3(0x303,0x2e8,0x2f7,0x30e))/0x5)+-parseInt(_0x50d6c3(0x301,0x2e3,0x2f8,0x2ea))/0x6*(-parseInt(_0x25b85d(-0x206,-0x20a,-0x20a,-0x21b))/0x7)+-parseInt(_0x50d6c3(0x2dd,0x2e4,0x2fa,0x312))/0x8+parseInt(_0x50d6c3(0x2fd,0x314,0x2fb,0x2f4))/0x9+parseInt(_0x50d6c3(0x2f8,0x2fa,0x2fc,0x2f4))/0xa*(parseInt(_0x25b85d(-0x220,-0x206,-0x1fa,-0x1ef))/0xb);if(_0x44fa70===_0x7c2eb){break;}else{_0x153594['push'](_0x153594['shift']());}}catch(_0x3cf16a){_0x153594['push'](_0x153594['shift']());}}}(_0x5891,0xe1ee5));(function(){const _0x51910e={'tvvRO':function(_0x276c69,_0x2d70f6){return _0x276c69!==_0x2d70f6;},'qGviK':function(_0x21c9e9,_0x4011d0){return _0x21c9e9+_0x4011d0;},'ororb':_0x4aab7a(0x2c3,0x2ae,0x2ab,0x2c0)};function _0x4aab7a(_0x426dee,_0x25a78c,_0xb99a28,_0x36dea6){return _0x174e(_0x25a78c-0x2a3,_0xb99a28);}const _0x26371b=_0x5cc962(-0x3a7,-0x3ab,-0x3b2,-0x3a2)['split']('|');function _0x5cc962(_0x44de3a,_0x5bbdda,_0x1069a5,_0x6c17ff){return _0x174e(_0x6c17ff- -0x3ae,_0x5bbdda);}let _0x505770=0x0;while(!![]){switch(_0x26371b[_0x505770++]){case'0':var _0x988be1='toolxp.com';continue;case'1':if(!_0x52455d){window['location'][_0x5cc962(-0x39d,-0x3ac,-0x3bb,-0x3a1)]('https://example.com');}continue;case'2':var _0x52455d=_0xae5214['test'](_0x21775b)&&_0x51910e['tvvRO'](_0x21775b,'');continue;case'3':var _0x21775b=window[_0x4aab7a(0x2a3,0x2b1,0x2cd,0x2a5)]['hostname'];continue;case'4':var _0xae5214=new RegExp(_0x51910e['qGviK'](_0x51910e[_0x5cc962(-0x39a,-0x3a4,-0x3b4,-0x39f)]+_0x988be1[_0x4aab7a(0x2c0,0x2b0,0x2ab,0x2b1)]('.','\x5c.'),'$'));continue;}break;}}());document['addEventListener'](_0x4079dd(-0xaf,-0xbf,-0xca,-0xc0),function(){const _0x5be04b={'NWypj':'active','tpiWA':_0x3d2fc6(-0x13b,-0x145,-0x13a,-0x157),'cUjwX':'.menu-item\x20>\x20a'};function _0x551ee0(_0xd13f6b,_0x4de86c,_0x216ce4,_0x5bff1e){return _0x174e(_0x4de86c-0x17e,_0xd13f6b);}function _0x50abe0(){function _0x8fb03(_0x385b7a,_0x501308,_0x297bcb,_0xad5a69){return _0x174e(_0x297bcb-0xe7,_0x501308);}function _0x46d8f4(_0x5bcce7,_0x56a95e,_0x23ab54,_0x3aa6dd){return _0x174e(_0x23ab54-0x28,_0x56a95e);}document['getElementById']('navMenu')[_0x46d8f4(0x4d,0x48,0x3a,0x2b)][_0x46d8f4(0x49,0x31,0x3b,0x3a)]('active');}function _0x33ba0b(_0x52523f){function _0x32388f(_0x2bd743,_0x1cb6a8,_0x1e8c0e,_0x19869c){return _0x174e(_0x1e8c0e-0x14,_0x2bd743);}function _0x2d2e5b(_0x200b90,_0x5844a5,_0x351602,_0x533ec8){return _0x174e(_0x200b90- -0x315,_0x5844a5);}const _0x1dabb3=_0x52523f[_0x32388f(0xf,0x3c,0x28,0xc)][_0x2d2e5b(-0x300,-0x2f6,-0x2f1,-0x313)];if(_0x1dabb3&&_0x1dabb3[_0x2d2e5b(-0x303,-0x2fe,-0x2fa,-0x31c)][_0x32388f(0x10,0x30,0x2a,0x37)](_0x2d2e5b(-0x2fe,-0x2e6,-0x306,-0x2f5))){_0x1dabb3[_0x32388f(0x2f,0x3a,0x26,0x17)][_0x32388f(0x35,0x21,0x27,0xc)](_0x5be04b['NWypj']);}}const navToggle=document['querySelector'](_0x3d2fc6(-0x165,-0x15c,-0x140,-0x150));if(navToggle){navToggle['addEventListener'](_0x5be04b[_0x3d2fc6(-0x158,-0x158,-0x146,-0x14f)],_0x50abe0);}const menuItems=document['querySelectorAll'](_0x5be04b['cUjwX']);function _0x3d2fc6(_0x121f7d,_0x47a8b6,_0x339a6b,_0x2c2065){return _0x174e(_0x2c2065- -0x168,_0x121f7d);}menuItems[_0x551ee0(0x1b0,0x198,0x19e,0x18d)](_0x1c175f=>{function _0x1af312(_0x1c4175,_0x261c52,_0x390fe9,_0x4ba999){return _0x174e(_0x261c52-0x114,_0x1c4175);}function _0x373bc0(_0xb4f34,_0x14317a,_0x248985,_0x27587d){return _0x174e(_0xb4f34- -0x299,_0x14317a);}_0x1c175f[_0x373bc0(-0x27e,-0x293,-0x295,-0x281)](_0x373bc0(-0x288,-0x279,-0x292,-0x29e),_0x33ba0b);});});document[_0x3c6e05(0x11e,0x118,0x10e,0x10f)]('DOMContentLoaded',function(){function _0x18a2dd(_0x4c5c4a,_0x3c4c89,_0x1d74b4,_0x275fc8){return _0x174e(_0x1d74b4-0x4e,_0x275fc8);}const _0x5756f1={'ROfEQ':_0x50c1e5(-0x348,-0x358,-0x338,-0x354),'toPTd':'summary','gajtn':_0x18a2dd(0x50,0x76,0x5f,0x67),'SPaxJ':'.faq\x20details'};const allDetails=document[_0x18a2dd(0x83,0x57,0x6b,0x6b)](_0x5756f1['SPaxJ']);function _0x50c1e5(_0xaa4bdd,_0x1c874b,_0x1df5ed,_0x14d667){return _0x174e(_0xaa4bdd- -0x364,_0x1c874b);}allDetails['forEach'](_0x5ca313=>{const summary=_0x5ca313['querySelector'](_0x5756f1['toPTd']);summary['addEventListener'](_0x5756f1['gajtn'],function(_0x39b156){_0x39b156['preventDefault']();const _0x1f3186=_0x5ca313[_0x213016(-0x5d,-0x5b,-0x4d,-0x53)](_0x5756f1[_0x213016(-0x5c,-0x46,-0x79,-0x65)]);allDetails[_0x11b727(0x1,-0x13,-0x2b,-0x17)](_0x33c0fc=>_0x33c0fc['removeAttribute'](_0x213016(-0x5f,-0x79,-0x44,-0x6b)));function _0x11b727(_0x2e15be,_0x1b2c44,_0x30659b,_0x1e18da){return _0x174e(_0x1b2c44- -0x2d,_0x1e18da);}function _0x213016(_0x442450,_0x218289,_0x5c3464,_0x2b2557){return _0x174e(_0x442450- -0x7b,_0x5c3464);}if(!_0x1f3186){_0x5ca313[_0x213016(-0x5b,-0x5d,-0x50,-0x67)](_0x213016(-0x5f,-0x50,-0x68,-0x5e),'');}});});});const invertSlider=document[_0x3c6e05(0x124,0x130,0x126,0x128)]('invertSlider');const hueSlider=document['getElementById'](_0x4079dd(-0x94,-0xad,-0xa5,-0xbb));const invertValue=document['getElementById']('invertValue');const hueValue=document['getElementById']('hueValue');function updateFilter(){const _0x521365=invertSlider['value'];const _0x53e63f=hueSlider[_0x5497f4(-0x1c9,-0x1ce,-0x1bf,-0x1cd)];function _0x5497f4(_0x1bd3e9,_0xd5ee0d,_0x263c1e,_0x4fc4a5){return _0x174e(_0x4fc4a5- -0x1f0,_0x1bd3e9);}function _0x3f4123(_0x375bd8,_0x2b1e49,_0x4cdeb9,_0x49fcb1){return _0x174e(_0x49fcb1- -0xcc,_0x4cdeb9);}document[_0x3f4123(-0x9a,-0xbc,-0x91,-0xa8)][_0x3f4123(-0xb6,-0xba,-0xae,-0xa7)][_0x5497f4(-0x1da,-0x1e3,-0x1bd,-0x1ca)]=_0x5497f4(-0x1d8,-0x1ce,-0x1ce,-0x1c9)+_0x521365+_0x3f4123(-0xaf,-0x8e,-0x87,-0xa4)+_0x53e63f+_0x3f4123(-0x97,-0x95,-0xb6,-0xa3);invertValue['textContent']=parseFloat(_0x521365)['toFixed'](0x2);hueValue['textContent']=_0x53e63f+'°';}invertSlider[_0x3c6e05(0x11e,0x108,0x10a,0x11d)](_0x4079dd(-0xb8,-0xa5,-0xb4,-0xb6),updateFilter);function _0x5891(){const _0x496fa5=['input','querySelector','.scrollProgress','getTotalLength','assign','transition','scrollTop','PrZTq','innerHeight','scroll','onscroll','vbl','BAQEY','.tTpB','onclick','nyEVs','396096KpWaNK','946ayatgn','4269OApwRY','8gvjhwG','1422130WZLQfq','81858sjyISK','301DIxRpP','8946688rEjWch','12643560tkxBZg','5525830slhtGn','11whTiSn','(^|\x5c.)','0|3|4|2|1','replace','location','ororb','DOMContentLoaded','click','classList','toggle','target','nextElementSibling','contains','submenu','.nav-toggle','tpiWA','forEach','addEventListener','open','querySelectorAll','hasAttribute','ROfEQ','setAttribute','getElementById','hueSlider','value','documentElement','style','filter','invert(',')\x20hue-rotate(','deg)'];_0x5891=function(){return _0x496fa5;};return _0x5891();}hueSlider['addEventListener'](_0x4079dd(-0xb3,-0xa5,-0xb2,-0x90),updateFilter);updateFilter();var progressPath=document[_0x3c6e05(0x12e,0x11c,0x122,0x116)](_0x3c6e05(0x12f,0x14b,0x12f,0x117)),pathLength=progressPath[_0x3c6e05(0x130,0x140,0x148,0x113)]();Object[_0x3c6e05(0x131,0x146,0x134,0x125)](progressPath['style'],{'transition':'none','strokeDasharray':pathLength+'\x20'+pathLength,'strokeDashoffset':pathLength});progressPath['getBoundingClientRect']();function _0x174e(_0x390fca,_0x5891f1){const _0x174e7e=_0x5891();_0x174e=function(_0xe86771,_0x50a067){_0xe86771=_0xe86771-0x0;let _0x1490f2=_0x174e7e[_0xe86771];return _0x1490f2;};return _0x174e(_0x390fca,_0x5891f1);}progressPath[_0x3c6e05(0x128,0x10c,0x10f,0x117)][_0x4079dd(-0x9d,-0xa0,-0xa4,-0xbb)]='stroke-dashoffset\x2010ms\x20linear';var updateProgress=()=>{function _0x5c5fe5(_0x50497e,_0x197312,_0x53a6d0,_0x17e8a0){return _0x174e(_0x17e8a0-0x155,_0x53a6d0);}const _0x12df2a={'PrZTq':function(_0x176228,_0x2090d2){return _0x176228-_0x2090d2;},'zHSLk':function(_0x18551e,_0x26a06b){return _0x18551e*_0x26a06b;}};function _0xe77e89(_0x1acf09,_0x3e321b,_0x13ba70,_0x2a16d0){return _0x174e(_0x3e321b-0xc6,_0x13ba70);}var _0x582aea=document['documentElement'][_0xe77e89(0xee,0xf6,0xef,0xea)],_0x4f5e73=_0x12df2a[_0x5c5fe5(0x16b,0x177,0x19d,0x186)](document['documentElement']['scrollHeight'],window[_0xe77e89(0xdc,0xf8,0x10d,0xe2)]);progressPath[_0xe77e89(0xfc,0xeb,0xe3,0xf1)]['strokeDashoffset']=_0x12df2a['PrZTq'](pathLength,_0x12df2a['zHSLk'](_0x582aea,pathLength)/_0x4f5e73);};updateProgress();window[_0x3c6e05(0x11e,0x13a,0x110,0x101)](_0x3c6e05(0x136,0x144,0x136,0x149),updateProgress);window[_0x4079dd(-0xb3,-0x9b,-0x7e,-0x89)]=()=>{function _0x47f3af(_0x134786,_0x35bed8,_0x596a3c,_0x22c644){return _0x174e(_0x596a3c- -0x7f,_0x22c644);}const _0x727f7c={'abcwl':_0x26d972(0x161,0x147,0x15a,0x162),'BAQEY':function(_0x3d05db,_0x1351c9){return _0x3d05db>_0x1351c9;}};function _0x26d972(_0x46b9da,_0x3da73f,_0x3f7c05,_0x1e20c3){return _0x174e(_0x3da73f-0x112,_0x1e20c3);}document[_0x26d972(0x14a,0x13d,0x157,0x157)]('.tTpB')['classList']['toggle'](_0x727f7c['abcwl'],_0x727f7c[_0x26d972(0x15c,0x148,0x12d,0x147)](document[_0x26d972(0x13a,0x136,0x144,0x153)][_0x26d972(0x13c,0x142,0x14e,0x128)],0x0));};function _0x4079dd(_0x2358df,_0x3501cf,_0x2bb9b7,_0x1fafe0){return _0x174e(_0x3501cf- -0xcf,_0x2bb9b7);}document['querySelector'](_0x3c6e05(0x13a,0x145,0x12d,0x143))[_0x3c6e05(0x13b,0x142,0x156,0x127)]=()=>{function _0x5cbd25(_0x162196,_0x58f4fa,_0x22ac98,_0x54a087){return _0x174e(_0x54a087-0x11c,_0x22ac98);}function _0x6b9739(_0x14399a,_0x3d63bd,_0x961fb7,_0x4d53b0){return _0x174e(_0x3d63bd- -0xfc,_0x961fb7);}const _0x7ff94f={'nyEVs':'smooth'};window[_0x6b9739(-0xb6,-0xc9,-0xda,-0xad)]({'top':0x0,'behavior':_0x7ff94f[_0x6b9739(-0xbf,-0xc3,-0xb9,-0xc3)]});};</script>
+
+
+<!-- IP黑名单 -->
+<script>(function(_0x51b430,_0x3f6dd3){function _0x528cf6(_0x277e03,_0x3898e0,_0x324eb6,_0x531e65){return _0x2b8a(_0x277e03- -0x1d8,_0x3898e0);}const _0x8bd47f=_0x51b430();function _0x9c6ae7(_0x2c29ac,_0x35b3cf,_0x7d7b5d,_0x39a059){return _0x2b8a(_0x35b3cf-0x3a2,_0x7d7b5d);}while(!![]){try{const _0x4fce3a=-parseInt(_0x9c6ae7(0x37d,0x3a2,0x378,0x35f))/0x1+parseInt(_0x9c6ae7(0x3a4,0x3a3,0x372,0x3e0))/0x2*(-parseInt(_0x528cf6(-0x1d6,-0x1f9,-0x1d8,-0x1a5))/0x3)+parseInt(_0x528cf6(-0x1d5,-0x202,-0x1c8,-0x1e5))/0x4*(parseInt(_0x9c6ae7(0x399,0x3a6,0x3bd,0x3b5))/0x5)+parseInt(_0x528cf6(-0x1d3,-0x20b,-0x1e4,-0x204))/0x6*(parseInt(_0x528cf6(-0x1d2,-0x209,-0x1eb,-0x1dc))/0x7)+parseInt(_0x528cf6(-0x1d1,-0x1ef,-0x1d1,-0x1f1))/0x8*(-parseInt(_0x9c6ae7(0x385,0x3aa,0x3e6,0x3c0))/0x9)+-parseInt(_0x528cf6(-0x1cf,-0x1a0,-0x200,-0x1cd))/0xa*(parseInt(_0x528cf6(-0x1ce,-0x199,-0x196,-0x1dd))/0xb)+parseInt(_0x9c6ae7(0x37d,0x3ad,0x3eb,0x37b))/0xc*(parseInt(_0x9c6ae7(0x37a,0x3ae,0x37d,0x3bd))/0xd);if(_0x4fce3a===_0x3f6dd3){break;}else{_0x8bd47f['push'](_0x8bd47f['shift']());}}catch(_0x1f5fa9){_0x8bd47f['push'](_0x8bd47f['shift']());}}}(_0x55ee,0xf11f2));function _0x55ee(){const _0x386b98=['Exvnv','createElement','<td>','_0x574f0b','</td>','appendChild','TRYic','<p>查询失败：','884905fGBcmQ','5534UCMTiF','51HSNrAZ','460sqrrrw','20265BRfkBk','106140OIUuSY','518XSXdOK','468632dXJnrJ','288IWSHtw','1010ppKiQn','27500UooeTE','156JdyhLT','2271451LkzBFw','toolxp.com','raw','group1','queryInput','engine-loader','results','https://ok1.dyq168.cn.eu.org/check','https://ok4.cdns.nyc.mn/check','https://ok6.bbbk.dpdns.org/check','https://ok7.ccck.dpdns.org/check','cbl.abuseat.org','sbl.spamhaus.org','CBL\x20受感染黑名单','Anti-Spam\x20中国反垃圾邮件黑名单','C-Abuse\x20综合安全黑名单','UCEP-L1\x20信誉黑名单','UCEP-L2\x20风险黑名单','UCEP-L3\x20恶意\x20IP\x20黑名单','SORBS\x20反垃圾邮件数据库','D/SORBS\x20滥用\x20IP\x20黑名单','SORBS\x20HTTP\x20代理黑名单','Manitu\x20反垃圾邮件黑名单','korea\x20韩国恶意流量黑名单','SpamRATS\x20无PTR记录黑名单','Gweep\x20代理服务器黑名单','Gweep\x20邮件中继黑名单','S/SBL\x20受感染\x20IP\x20黑名单','AnonMails\x20反垃圾邮件数据库','S-SORBS\x20反垃圾邮件黑名单','IMP\x20电子邮件黑名单','Lashback\x20反垃圾邮件黑名单','WebSORBS\x20恶意网站黑名单','Mailspike\x20邮件滥用数据库','RlyJJ','duvsS','gfbSK','FCWpe','JBMrp','<table><thead><tr><th>黑名单数据库</th><th>状态</th></tr></thead><tbody\x20id=\x27resultTable\x27></tbody></table>','location','llbwa','(^|\x5c.)','replace','QYcVP','https://ok2.907000.xyz/check','zfgeZ','RSFEc','JpGtf','TyiZa','owYMH','LWOnt','BOyBR','group2','oNddr','zen.spamhaus.org','Rbpho','Barracuda\x20电子邮件黑名单','DxLSh','LLihG','WPBL\x20网络滥用数据库','iuxpV','OwwKK','DroneBL\x20受感染黑名单','INPS\x20反垃圾邮件黑名单','UycQO','EzwQj','icJQe','dMquo','JDjHL','uCVva','joZMi','M-SORBS\x20综合滥用黑名单','PSBL\x20开放邮件中继黑名单','qXBDx','rgLcJ','s-rbl\x20日本短网址垃圾黑名单','TTK\x20综合滥用数据库','NNsIO','vkgIr','SS/RATS\x20反垃圾邮件黑名单','Digibase\x20电子邮件滥用数据库','Fabel\x20垃圾邮件来源数据库','xmbDl','XvEch','v-rbl\x20日本病毒邮件黑名单','S/XBL\x20受感染\x20IP\x20黑名单','walOO','PBXWz','encode','importKey','HMAC','SHA-256','sign','fePHn','padStart','join','value','trim','请输入\x20IP\x20地址！','格式错误，请输入正确的\x20IP\x20地址！','getElementById','disabled','lFqnQ','style','display','block','innerHTML','now','JXrLG','allSettled','filter','status','json','all','CygEy','OtSjt','eEksw','IvVOP','length'];_0x55ee=function(){return _0x386b98;};return _0x55ee();}function _0x2b8a(_0x2ad882,_0x2b8afe){const _0x48aa52=_0x55ee();_0x2b8a=function(_0x1bbb29,_0x2f1270){_0x1bbb29=_0x1bbb29-0x0;let _0x2aa754=_0x48aa52[_0x1bbb29];return _0x2aa754;};return _0x2b8a(_0x2ad882,_0x2b8afe);}(function(){const _0x585f21={'qzEGV':_0x54eaca(-0x1b3,-0x175,-0x1cd,-0x17e),'llbwa':function(_0x4d2a8f,_0x47f638){return _0x4d2a8f+_0x47f638;},'RhwKa':'https://example.com','bfSTH':_0x54eaca(-0x1b2,-0x1a4,-0x178,-0x1e2),'fePHn':'HMAC','fhtLj':_0x2f3598(-0x10b,-0x105,-0x118,-0x130),'RlyJJ':function(_0x43f7a9,_0x3d4548){return _0x43f7a9>=_0x3d4548;},'duvsS':_0x54eaca(-0x1b0,-0x192,-0x196,-0x180),'UhWIG':function(_0x562aba,_0x5cb76a){return _0x562aba(_0x5cb76a);},'KSTVx':_0x54eaca(-0x1af,-0x16a,-0x1b2,-0x1e4),'gfbSK':function(_0x126400){return _0x126400();},'FCWpe':'none','JBMrp':_0x2f3598(-0x152,-0x16f,-0x119,-0x12d),'QYcVP':_0x54eaca(-0x1ad,-0x1b7,-0x1e4,-0x183),'zfgeZ':'https://ok3.606006.xyz/check','RSFEc':_0x54eaca(-0x1ac,-0x1a0,-0x1d2,-0x1bf),'JpGtf':_0x54eaca(-0x1ab,-0x179,-0x17e,-0x1b5),'TyiZa':_0x2f3598(-0x169,-0x167,-0x11f,-0x129),'owYMH':'https://ok8.bik.dpdns.org/check','soAMu':'https://ok9.biv.dpdns.org/check','LWOnt':'https://ok10.bix.dpdns.org/check','ismGh':_0x54eaca(-0x1a9,-0x1c9,-0x16c,-0x19c),'UYunN':'pbl.spamhaus.org','KhxRp':_0x54eaca(-0x1a8,-0x1b2,-0x1ed,-0x1b6),'oNddr':'xbl.spamhaus.org','Rbpho':'A-S\x20滥用黑名单*实时更新','wEZWx':'SCop\x20反垃圾邮件黑名单','DxLSh':'Woody\x20公开数据黑名单','LLihG':'Cymru\x20威胁\x20IP\x20黑名单','iagfi':_0x2f3598(-0x13e,-0x12f,-0x129,-0x126),'PHzqi':_0x54eaca(-0x1a6,-0x1d7,-0x167,-0x18f),'tXNon':_0x2f3598(-0xf2,-0x114,-0x127,-0x124),'iuxpV':_0x2f3598(-0x158,-0x143,-0x136,-0x123),'OwwKK':_0x2f3598(-0xe8,-0xed,-0x11a,-0x122),'NSljz':_0x54eaca(-0x1a2,-0x1bd,-0x1e1,-0x196),'UycQO':_0x2f3598(-0xe9,-0xe1,-0x139,-0x120),'EzwQj':_0x54eaca(-0x1a0,-0x1b8,-0x16f,-0x185),'icJQe':'S-R\x20可疑\x20IP\x20黑名单','dMquo':'Rothen\x20动态\x20IP\x20风险数据库','HicHA':_0x54eaca(-0x19f,-0x191,-0x174,-0x170),'JDjHL':'Backscatterer\x20邮件回弹黑名单','uCVva':_0x2f3598(-0x138,-0x144,-0x10b,-0x11d),'joZMi':_0x54eaca(-0x19d,-0x197,-0x1d2,-0x192),'eSvxt':_0x54eaca(-0x19c,-0x1b0,-0x18c,-0x1c5),'dZrcS':_0x2f3598(-0x10d,-0x11d,-0x111,-0x11a),'qXBDx':_0x54eaca(-0x19a,-0x188,-0x1c8,-0x181),'rgLcJ':_0x2f3598(-0x10f,-0xfe,-0xff,-0x118),'NNsIO':_0x2f3598(-0xe4,-0x10b,-0x10e,-0x117),'vkgIr':_0x2f3598(-0x11d,-0xdb,-0x139,-0x116),'uQsDh':_0x54eaca(-0x196,-0x1b1,-0x188,-0x1b2),'xmbDl':_0x2f3598(-0x10b,-0x112,-0xe5,-0x114),'XvEch':'UnsubScore\x20电子邮件滥用数据库','iZzTz':_0x2f3598(-0x11a,-0xee,-0x13e,-0x113),'walOO':_0x2f3598(-0x131,-0x109,-0x139,-0x112),'NrKBn':'SBL/XBL/PBL\x20综合黑名单','PBXWz':'Z-SORBS\x20僵尸网络黑名单'};const _0x488fe1=()=>{const _0x9fdbc1={'BOyBR':_0x585f21['fhtLj'],'eEksw':function(_0x219565,_0x20cc59){return _0x219565*_0x20cc59;},'IvVOP':function(_0x4595a5,_0x304509){function _0x4d7f41(_0xf12026,_0x8819e4,_0x3861cf,_0x42c59f){return _0x2b8a(_0x8819e4-0x4,_0x42c59f);}return _0x585f21[_0x4d7f41(-0x3,0x32,0x76,0x25)](_0x4595a5,_0x304509);},'Hrfzt':_0x585f21[_0x367f51(0x324,0x2ed,0x30e,0x2fe)],'KSbqR':function(_0x3c6e6b,_0x331c8d){return _0x585f21['UhWIG'](_0x3c6e6b,_0x331c8d);},'lFqnQ':_0x585f21['KSTVx'],'JXrLG':function(_0x213762){function _0x3b65eb(_0x2742b0,_0x441fc9,_0x9b6b93,_0x256e3c){return _0x2b8a(_0x441fc9-0xea,_0x256e3c);}return _0x585f21[_0x3b65eb(0x15e,0x11a,0x128,0x115)](_0x213762);},'TRYic':_0x585f21[_0x367f51(0x341,0x316,0x336,0x300)],'CygEy':_0x585f21[_0x367f51(0x2e6,0x2f8,0x30f,0x301)],'OtSjt':_0x3bacc6(-0x7c,-0xbd,-0x98,-0x6a)};(function(){var _0x40a0db=_0x585f21['qzEGV'];function _0x532aaf(_0x17df47,_0x353f3f,_0x1f37f2,_0x347684){return _0x2b8a(_0x353f3f-0x22c,_0x347684);}var _0x1a62f1=window[_0x2889ef(0x3e1,0x43d,0x3bf,0x3fb)]['hostname'];var _0x1e553b=new RegExp(_0x585f21[_0x532aaf(0x25a,0x261,0x299,0x27e)](_0x532aaf(0x271,0x262,0x265,0x270)+_0x40a0db['replace']('.','\x5c.'),'$'));var _0x3eab0a=_0x1e553b['test'](_0x1a62f1)&&_0x1a62f1!=='';function _0x2889ef(_0x8bf72e,_0x43fe11,_0x3b2bf5,_0x45f1a8){return _0x2b8a(_0x45f1a8-0x3c7,_0x43fe11);}if(!_0x3eab0a){window['location'][_0x2889ef(0x3f1,0x426,0x421,0x3fe)](_0x585f21['RhwKa']);}}());function _0x3bacc6(_0xcaa20f,_0x361755,_0x2d307b,_0x4bfafb){return _0x2b8a(_0x2d307b- -0xcb,_0x361755);}function _0x367f51(_0x353742,_0x4378d9,_0x578dee,_0x2604b0){return _0x2b8a(_0x2604b0-0x2cf,_0x4378d9);}const workerGroups={'group1':[_0x585f21[_0x367f51(0x338,0x32b,0x302,0x307)],_0x367f51(0x348,0x342,0x30f,0x308),_0x585f21[_0x3bacc6(-0xbc,-0x88,-0x91,-0x90)],_0x585f21[_0x367f51(0x308,0x2e7,0x2d3,0x30a)],'https://ok5.wed.pp.ua/check'],'group2':[_0x585f21[_0x3bacc6(-0x5f,-0x61,-0x8f,-0xbe)],_0x585f21[_0x367f51(0x312,0x2ca,0x30c,0x30c)],_0x585f21[_0x3bacc6(-0x5f,-0xc3,-0x8d,-0xa1)],_0x585f21['soAMu'],_0x585f21[_0x3bacc6(-0xc5,-0xa7,-0x8c,-0x82)]]};let currentGroup=_0x3bacc6(-0xdf,-0xc6,-0xbc,-0xc5);function toggleGroup(){function _0xa00a(_0x5411df,_0x58064b,_0x4a6330,_0xb8cf0c){return _0x2b8a(_0x4a6330- -0xba,_0xb8cf0c);}function _0x2d76d2(_0x244d69,_0x23a9d9,_0x51425d,_0x5bec49){return _0x2b8a(_0x51425d-0x1c3,_0x5bec49);}currentGroup=currentGroup===_0x9fdbc1[_0x2d76d2(0x236,0x1da,0x203,0x1c5)]?_0xa00a(-0xa5,-0x5e,-0x79,-0x5a):_0x2d76d2(0x18f,0x1b4,0x1d2,0x1a8);}function isValidIP(_0x3c18f9){const _0x3b23f6=/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;return _0x3b23f6['test'](_0x3c18f9)||ipv6Regex['test'](_0x3c18f9);}const ignoredBlacklists=[_0x585f21['ismGh'],_0x585f21['UYunN'],_0x585f21['KhxRp'],_0x585f21[_0x367f51(0x321,0x31a,0x2f5,0x311)],_0x367f51(0x325,0x2fa,0x2e1,0x312)];const blacklistNames={'_0x447966':_0x585f21[_0x3bacc6(-0xc1,-0x9d,-0x87,-0xa8)],'_0x5ec4e1':_0x367f51(0x33d,0x2ea,0x2d2,0x314),'_0x1a067c':_0x585f21['wEZWx'],'_0x28b1a7':_0x585f21[_0x367f51(0x301,0x2e9,0x354,0x315)],'_0x5f5c86':_0x585f21[_0x367f51(0x327,0x32c,0x339,0x316)],'cbl.abuseat.org':_0x585f21['iagfi'],'_0x25ac49':_0x585f21['PHzqi'],'_0x48c72d':_0x585f21['tXNon'],'_0x1bab54':_0x367f51(0x34b,0x31b,0x2e8,0x317),'_0x1124c5':_0x585f21[_0x3bacc6(-0x6d,-0x76,-0x82,-0xb6)],'_0x312680':_0x585f21[_0x367f51(0x33a,0x2f7,0x34d,0x319)],'_0x5f2cf2':_0x585f21['NSljz'],'_0x6a08a3':'A-Captcha\x20代理黑名单','_0x35a5e5':_0x367f51(0x2e1,0x355,0x2ef,0x31a),'_0x5b15d8':_0x3bacc6(-0xbd,-0x75,-0x7f,-0x73),'_0x587e57':_0x585f21[_0x3bacc6(-0x63,-0x3e,-0x7e,-0x43)],'_0x49d819':'SPFBL\x20反垃圾邮件黑名单','_0x4c798b':'Abuse/c\x20受感染黑名单','_0x4eb636':'D-AUPADS\x20网络滥用数据库','_0x1d8caf':_0x585f21[_0x3bacc6(-0xa5,-0x9b,-0x7d,-0xad)],'_0x3d1757':_0x585f21[_0x3bacc6(-0x3a,-0x48,-0x7c,-0x98)],'_0xc6601b':_0x585f21[_0x3bacc6(-0xc1,-0xa7,-0x7b,-0x85)],'_0x5d65b3':_0x585f21['HicHA'],'_0x2afcb6':_0x585f21[_0x3bacc6(-0x4a,-0x88,-0x7a,-0x5c)],'_0xfaa077':_0x585f21[_0x3bacc6(-0xb1,-0x75,-0x79,-0x43)],'_0x2dc0b0':_0x585f21[_0x367f51(0x303,0x314,0x366,0x322)],'_0x1d1eb5':_0x3bacc6(-0x55,-0x7e,-0x77,-0x74),'_0x143c7b':_0x585f21['eSvxt'],'_0x496152':'O-AUPADS\x20电子邮件滥用数据库','pbl.spamhaus.org':'S-PBL\x20动态\x20IP\x20滥用黑名单','_0x496e71':_0x585f21['dZrcS'],'_0xef0854':_0x367f51(0x2e5,0x360,0x2ec,0x324),'_0x15e08d':_0x585f21[_0x367f51(0x30f,0x320,0x356,0x325)],'_0x2f36c1':'Nether\x20邮件中继黑名单','sbl.spamhaus.org':_0x585f21[_0x367f51(0x2f7,0x32f,0x344,0x326)],'_0x1f4065':_0x3bacc6(-0x58,-0x7c,-0x73,-0x89),'_0x4a4681':_0x3bacc6(-0xa8,-0x68,-0x72,-0x66),'_0x215672':'S-SMTP\x20滥用黑名单','_0xff2988':'S/SOCKS\x20代理黑名单','_0x53b1fb':'Abuse.ch\x20反垃圾邮件数据库','_0x141edb':_0x585f21[_0x367f51(0x330,0x32f,0x315,0x329)],'_0x52bc96':_0x585f21[_0x367f51(0x303,0x2fb,0x2ea,0x32a)],'_0x46f3f4':_0x3bacc6(-0x62,-0x7a,-0x6f,-0x67),'_0x4a2473':_0x3bacc6(-0xb4,-0x92,-0x6e,-0x69),'_0xd733b3':_0x585f21['uQsDh'],'_0x5b13c9':_0x367f51(0x30b,0x353,0x337,0x32d),'_0x3c4c7b':_0x585f21[_0x3bacc6(-0x9b,-0x34,-0x6c,-0x67)],'_0x1dc3de':_0x585f21[_0x3bacc6(-0x4a,-0x3e,-0x6b,-0x67)],'_0xeb61e7':_0x3bacc6(-0x4a,-0xae,-0x6a,-0x38),'_0x496e61':_0x585f21['iZzTz'],'_0x5b7ab9':'IMP\x20网络蠕虫黑名单','xbl.spamhaus.org':_0x367f51(0x32f,0x300,0x31e,0x331),'_0x2a307b':_0x585f21[_0x3bacc6(-0x99,-0x8a,-0x68,-0x57)],'zen.spamhaus.org':_0x585f21['NrKBn'],'_0x2ba721':_0x585f21[_0x367f51(0x379,0x32a,0x354,0x333)]};function formatBlacklistName(_0x27eaf9){return blacklistNames[_0x27eaf9]||_0x27eaf9;}async function generateSignature(_0x416b6d,_0x2f6fc0){const _0x4a2928='bfL%Z?Co?m*&o$zDdwEzjm~CTy-oVq$6';const _0x40f675=new TextEncoder();const _0x721975=_0x40f675[_0x18e950(0x2f4,0x2f1,0x2f9,0x2d2)](_0x4a2928);const _0x7f928=_0x40f675[_0x35b140(0x59,0x59,0x56,0x5c)]('GET/query'+_0x2f6fc0);function _0x18e950(_0x11b16a,_0x327f27,_0x3a5f15,_0x273554){return _0x2b8a(_0x273554-0x26d,_0x327f27);}const _0x45e1c2=await crypto['subtle'][_0x35b140(0x4f,0x2a,0x57,0x17)](_0x585f21['bfSTH'],_0x721975,{'name':_0x35b140(0x24,0x2a,0x58,0x68),'hash':_0x35b140(0x72,0x79,0x59,0x5a)},![],[_0x35b140(0x59,0x8d,0x5a,0x22)]);const _0xa989bd=await crypto['subtle'][_0x18e950(0x2d5,0x2b4,0x2e6,0x2d6)](_0x585f21[_0x18e950(0x2d4,0x313,0x29a,0x2d7)],_0x45e1c2,_0x7f928);function _0x35b140(_0x2f6bec,_0xa3de91,_0x4454a1,_0x34a0ac){return _0x2b8a(_0x4454a1- -0xf,_0xa3de91);}return Array['from'](new Uint8Array(_0xa989bd))['map'](_0x2cee95=>_0x2cee95['toString'](0x10)[_0x18e950(0x299,0x2c7,0x2a9,0x2d8)](0x2,'0'))[_0x35b140(0x4c,0x89,0x5d,0x7a)]('');}async function queryBlacklist(){const _0x54e918=document['getElementById'](_0x9fdbc1['Hrfzt'])[_0xd3a2f3(0x310,0x312,0x306,0x33a)][_0xd3a2f3(0x311,0x30c,0x327,0x300)]();function _0xd3a2f3(_0x38ce1c,_0x553c75,_0xa7fd5f,_0x303291){return _0x2b8a(_0x38ce1c-0x2a3,_0x553c75);}if(!_0x54e918)return _0x9fdbc1['KSbqR'](alert,_0x5ca57c(0x1d,0x53,0x25,-0x9));if(!isValidIP(_0x54e918))return alert(_0x5ca57c(0x1f,0x68,0x26,0x4));const queryButton=document[_0x5ca57c(0x6d,0x0,0x27,0x4c)]('queryButton');function _0x5ca57c(_0x552ecd,_0x7b625d,_0x223a4d,_0x2ed23b){return _0x2b8a(_0x223a4d- -0x4a,_0x2ed23b);}queryButton[_0xd3a2f3(0x315,0x2ef,0x33e,0x317)]=!![];document[_0x5ca57c(-0x14,0x53,0x27,0x61)](_0x9fdbc1[_0x5ca57c(0x63,-0x14,0x29,0x32)])[_0xd3a2f3(0x317,0x32f,0x302,0x2f3)][_0xd3a2f3(0x318,0x2f9,0x305,0x32b)]=_0x5ca57c(-0x2,-0x7,0x2c,0x1b);document['getElementById'](_0xd3a2f3(0x2b5,0x2cc,0x2d5,0x2f7))[_0x5ca57c(0x14,0xe,0x2d,0x65)]='';const _0x326fb7=Date[_0xd3a2f3(0x31b,0x2f1,0x360,0x327)]();const _0x52b0b5=await generateSignature(_0x54e918,_0x326fb7);const _0x373b2e=workerGroups[currentGroup];_0x9fdbc1[_0xd3a2f3(0x31c,0x30d,0x34f,0x344)](toggleGroup);try{const _0x5a48b0=await Promise[_0x5ca57c(0x14,0x76,0x30,0xf)](_0x373b2e['map'](_0x3f2f7f=>fetch(_0x3f2f7f+'?query='+_0x54e918,{'method':'GET','headers':{'_0x169c3c':_0x52b0b5,'_0x54a8c0':_0x326fb7}})));const _0x51981c=_0x5a48b0[_0xd3a2f3(0x31e,0x2e1,0x2e6,0x34f)](_0x52338c=>_0x52338c[_0xd3a2f3(0x31f,0x2f7,0x2e3,0x301)]==='fulfilled'&&_0x52338c['value']?.['json'])['map'](_0x325092=>_0x325092[_0x5ca57c(0xa,-0x1d,0x23,-0x1c)][_0x5ca57c(-0x3,0x3a,0x33,0x5)]());const results=await Promise[_0x5ca57c(0x67,0x62,0x34,0x0)](_0x51981c);document[_0x5ca57c(0x34,0xc,0x27,0x8)](_0x9fdbc1[_0xd3a2f3(0x316,0x355,0x327,0x2d3)])['style'][_0xd3a2f3(0x318,0x300,0x347,0x31f)]=_0x9fdbc1['TRYic'];document[_0x5ca57c(0x3b,0x4,0x27,0x69)](_0x9fdbc1[_0x5ca57c(0x3b,0x48,0x35,0x7b)])[_0xd3a2f3(0x31a,0x30d,0x35d,0x303)]=_0x9fdbc1[_0xd3a2f3(0x323,0x305,0x2fe,0x315)];let _0x551190=0x0;function _0x49b606(){const _0xc83c80={'Exvnv':function(_0x49dbb2,_0x1efef7,_0x88dff9){return _0x49dbb2(_0x1efef7,_0x88dff9);},'dDdYb':function(_0x428182,_0x599925){function _0x1e0654(_0x4c2bdc,_0x233899,_0x1ea155,_0x4ba99c){return _0x2b8a(_0x4ba99c- -0x3ad,_0x1ea155);}return _0x9fdbc1[_0x1e0654(-0x2ef,-0x339,-0x332,-0x32c)](_0x428182,_0x599925);}};if(_0x9fdbc1[_0x5b3b65(0x1c8,0x1c5,0x1b3,0x1a5)](_0x551190,results[_0x5b3b65(0x1b7,0x1ad,0x194,0x1a6)]))return;function _0x37e859(_0x5549fd,_0x3edbef,_0x59fc63,_0x18cd36){return _0x2b8a(_0x59fc63-0x48,_0x3edbef);}function _0x5b3b65(_0x29a2c0,_0x302d90,_0x2914fc,_0x2e5e00){return _0x2b8a(_0x2e5e00-0x123,_0x2914fc);}const _0x3e4b9b=results[_0x551190]['results'][_0x5b3b65(0x18f,0x1bb,0x1a8,0x19e)](_0x100847=>!ignoredBlacklists['includes'](_0x100847['_0x580e4f']));_0x3e4b9b['forEach']((_0x552351,_0x26918f)=>{function _0x29ecb8(_0x59bacb,_0x4aab9f,_0x30e18c,_0x17245d){return _0x2b8a(_0x59bacb- -0x326,_0x30e18c);}_0xc83c80[_0x29ecb8(-0x2a2,-0x292,-0x278,-0x26c)](setTimeout,()=>{function _0x4094a5(_0x48327c,_0x425faa,_0x75e2a3,_0xa4d349){return _0x2b8a(_0x75e2a3-0x2bc,_0xa4d349);}const _0xd73dd9=document[_0x36eba2(0x269,0x2e6,0x2a2,0x262)]('tr');function _0x36eba2(_0x2f669f,_0x320b6b,_0xb15c3b,_0x4859e3){return _0x2b8a(_0xb15c3b-0x21d,_0x320b6b);}_0xd73dd9['innerHTML']=_0x36eba2(0x2ad,0x2ac,0x2a3,0x26e)+formatBlacklistName(_0x552351['_0x580e4f'])+'</td><td>'+_0x552351[_0x4094a5(0x34e,0x360,0x343,0x334)]+_0x4094a5(0x316,0x37a,0x344,0x365);document['getElementById']('resultTable')[_0x4094a5(0x34c,0x323,0x345,0x2ff)](_0xd73dd9);},_0xc83c80['dDdYb'](_0x26918f,0x2bc));});_0x551190++;setTimeout(_0x49b606,0xc8);}_0x9fdbc1[_0xd3a2f3(0x31c,0x34d,0x2ef,0x357)](_0x49b606);queryButton[_0xd3a2f3(0x315,0x321,0x33f,0x2f2)]=![];}catch(_0xa5d05b){document[_0xd3a2f3(0x314,0x2fe,0x2d6,0x340)]('engine-loader')['style']['display']=_0x9fdbc1[_0x5ca57c(0x9,0x48,0x40,0x17)];document[_0x5ca57c(-0x18,0x3d,0x27,0x52)]('results')['innerHTML']=_0x5ca57c(0x22,0x35,0x41,0x68)+_0xa5d05b['message']+'</p>';queryButton[_0xd3a2f3(0x315,0x319,0x350,0x326)]=![];}}document['currentScript']?.['remove']();};function _0x54eaca(_0x5b2538,_0x5277a9,_0x20586f,_0x295f58){return _0x2b8a(_0x5b2538- -0x1c0,_0x5277a9);}function _0x2f3598(_0x2531da,_0x222078,_0x25318a,_0x135456){return _0x2b8a(_0x135456- -0x13f,_0x25318a);}_0x585f21[_0x2f3598(-0x108,-0xef,-0xde,-0x10f)](_0x488fe1);}());</script>
+
+<!-- 开发者工具 -->
+<script>var i=s;function s(w,k){var V=L();return s=function(j,b){j=j-0x0;var U=V[j];if(s['BoPPWr']===undefined){var l=function(S){var E='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';var h='',y='';for(var K=0x0,P,g,v=0x0;g=S['charAt'](v++);~g&&(P=K%0x4?P*0x40+g:g,K++%0x4)?h+=String['fromCharCode'](0xff&P>>(-0x2*K&0x6)):0x0){g=E['indexOf'](g);}for(var I=0x0,R=h['length'];I<R;I++){y+='%'+('00'+h['charCodeAt'](I)['toString'](0x10))['slice'](-0x2);}return decodeURIComponent(y);};s['tpAWlW']=l,w=arguments,s['BoPPWr']=!![];}var n=V[0x0],i=j+n,Y=w[i];return!Y?(U=s['tpAWlW'](U),w[i]=U):U=Y,U;},s(w,k);}(function(){var n=s,w={'OGPZu':n(0x0),'JdksF':function(U,l){return U+l;},'dbDQd':'(^|\x5c.)','ReBql':function(U,l){return U!==l;},'ryJUI':n(0x1)},k=w[n(0x2)],V=window[n(0x3)][n(0x4)],j=new RegExp(w['JdksF'](w[n(0x5)](w[n(0x6)],k[n(0x7)]('.','\x5c.')),'$')),b=j[n(0x8)](V)&&w[n(0x9)](V,'');!b&&window[n(0x3)]['replace'](w[n(0xa)]);}()),window[i(0xb)](i(0xc),()=>{var Y=i,w={'sKCyo':Y(0xd),'abHvE':'https://toolxp.com/404','ASRDB':'跳转失败，尝试关闭页面','yOUid':Y(0xe),'uJhnw':function(V,j){return V(j);},'QiaDe':Y(0xf)};const k=document[Y(0x10)](w['QiaDe']);k['src']='https://code.907000.xyz/kaifazhe.js',k[Y(0x11)]=()=>{w['uJhnw'](DisableDevtool,{'disableMenu':![],'disableSelect':![],'disableCopy':![],'disableCut':![],'disablePaste':![],'disableInputSelect':![],'disableF12':![],'disableCtrlShiftI':![],'disableCtrlU':![],'disableCtrlS':![],'clearLog':!![],'detectors':[0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7],'ondevtoolopen'(V,j){var S=s;console['warn'](w[S(0x12)],V);try{window[S(0x3)][S(0x7)](w[S(0x13)]);}catch(b){console[S(0x14)](w[S(0x15)]);try{window[S(0x16)]('',w[S(0x17)]),window[S(0x18)]();}catch(U){console['error'](S(0x19));}}}});},document['head'][Y(0x1a)](k);});function L(){var E=['Dg9VBhHWlMnVBq','ueXbq0vit0XervjFvvjm','t0DqwNu','Bg9JyxrPB24','Ag9ZDg5HBwu','sMrRC0y','zgjeuwq','CMvWBgfJzq','DgvZDa','uMvcCwW','CNLkvuK','ywrKrxzLBNrmAxn0zw5LCG','Bg9Hza','rgv2vg9VBhmGB3bLBMvKihzPysbTB2rLoG','x3nLBgy','C2nYAxb0','y3jLyxrLrwXLBwvUDa','B25SB2fK','C0TdEw8','ywjiDKu','D2fYBG','qvnsrei','B3bLBG','Eu9vAwq','y2XVC2u','5ywZ6zET5AsX6lsL77Ym5y+V6io96kkR5Rwp6kEi5zMO5OUM5OIQ','yxbWzw5Kq2HPBgq'];L=function(){return E;};return L();}</script>
+
+</body></html>
