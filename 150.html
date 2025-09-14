@@ -830,12 +830,11 @@ input#domain-input {
   ];
 
   const workerHosts = [
-//    "https://gfw.907000.xyz",
-//    "https://gfw1.907000.xyz",
-//    "https://gfw2.907000.xyz",
-//    "https://gfw3.907000.xyz",
-//    "https://gfw4.907000.xyz",
-    "https://gfw5.907000.xyz",	  
+    "https://gfw.907000.xyz",
+    "https://gfw1.907000.xyz",
+    "https://gfw2.907000.xyz",
+    "https://gfw3.907000.xyz",
+    "https://gfw4.907000.xyz",
   ];
 
   const secret = "toolxp-secret";
@@ -860,7 +859,21 @@ input#domain-input {
       const signature = await sha256(domain + timestamp + secret);
       const results = await detectWithRandomWorker(domain, timestamp, signature);
 
-      results.forEach(({ source, status }) => {
+results.forEach(({ source, status, isTip }) => {
+  if (isTip) {
+    // 如果是展示文本“—— GFW 实时检测无缓存 ——”，则不显示状态
+    const tip = document.createElement("div");
+    tip.textContent = source;
+    tip.style.fontWeight = "bold";
+    tip.style.margin = "16px 0 8px 0";
+    tip.style.textAlign = "center"; // 添加居中样式
+    document.getElementById("result-content").appendChild(tip);
+    return;
+  }
+});
+
+
+        // 处理其他有效引擎的检测结果
         renderResult(source, status);
       });
 
@@ -885,7 +898,7 @@ input#domain-input {
     try {
       const tasks = engines.map(async (engine) => {
         if (engine.id === "tip") {
-          return { source: engine.name, status: "info" }; // 只保留提示信息，不处理失效API
+          return { source: engine.name, isTip: true }; // 处理展示文本
         }
 
         const res = await fetch(`${host}/?domain=${encodeURIComponent(domain)}&engine=${engine.id}`, {
@@ -960,7 +973,6 @@ input#domain-input {
     return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
   }
 </script>
-
 
 
 
