@@ -866,8 +866,6 @@ document.addEventListener("DOMContentLoaded", function () {
         { id: "user-ipv6-new", label: "⑨", url: "https://ipv6.losangeles.test-ipv6.com/ip/?callback=jsonpIPv6Callback", type: "jsonp" }
     ];
 
-
-
     const dnsAPIs = [
         { name: "DNS1", url: "https://edns.ip-api.com/json", id: "dns-ip-api" },
         { name: "DNS2", url: `https://${generateRandomDomain()}.ipv4.surfsharkdns.com`, id: "dns-surfshark" }
@@ -1004,6 +1002,8 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         };
 
+
+
         rtcPeerConnection.onicegatheringstatechange = () => {
             if (rtcPeerConnection.iceGatheringState === "complete" && !detectedIP) {
                 webrtcStatusElement.textContent = "未检测到";
@@ -1134,8 +1134,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("user-ipv6-new").textContent = ipv6;
         fetchGeoInfo(ipv6, "user-ipv6-new-geo");
     };
-});
-</script>
+});</script>
 
 <!-- 开发者工具 -->
 <!--
