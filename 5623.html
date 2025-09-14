@@ -1345,27 +1345,41 @@ detectButton.addEventListener("click", function () {
     "https://ipv6.ddnspod.com",
   ];
 
-  // 获取 IP 列表
-  async function fetchIPs(apis) {
-    const ipSet = new Set();
-    for (const api of apis) {
+// 获取 IP 列表（修复版）
+async function fetchIPs(apis) {
+  const ipSet = new Set();
+  for (const api of apis) {
+    try {
+      const res = await withTimeout(fetch(api));
+      const text = await res.text();
+      let json = {};
       try {
-        const res = await withTimeout(fetch(api));
-        const text = await res.text();
-        let json = {};
-        try {
-          json = JSON.parse(text);
-        } catch (e) {
-          console.log(`响应不是 JSON 格式，直接使用文本内容：${text}`);
-        }
-        const ip = json?.ip || json?.data?.ip || json?.clientip || text.trim();
-        if (ip) ipSet.add(ip);
+        json = JSON.parse(text);
       } catch (e) {
-        console.warn(`IP接口失败：${api}`, e.message);
+        console.log(`响应不是 JSON 格式，直接使用文本内容：${text}`);
       }
+
+      // 更强健的 IP 提取逻辑
+      const ip =
+        json?.ip ||
+        json?.data?.ip ||
+        json?.clientip ||
+        json?.ipinfo?.text || // 支持 VORE-API 的结构
+        text.trim();
+
+      // 类型校验：确保是合法 IPv4 地址字符串
+      if (typeof ip === "string" && /^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) {
+        ipSet.add(ip);
+      } else {
+        console.warn(`跳过无效 IP：`, ip);
+      }
+    } catch (e) {
+      console.warn(`IP接口失败：${api}`, e.message);
     }
-    return Array.from(ipSet);
   }
+  return Array.from(ipSet);
+}
+
 
   // 查询 ASN 和国家代码
   async function fetchASNAndCountryCode(ip) {
