@@ -857,8 +857,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const ipSources = [
         { id: "cn1", label: "①", url: "https://myip.ipip.net/json", parse: (data) => data.data?.ip || "未知", type: "json" },
         { id: "cn2", label: "②", url: "https://app.netart.cn/network-panel/ip.ajax", parse: (data) => data.data?.ip || "未知", type: "json" },
-        { id: "us1", label: "③", url: "https://v4.api.ipinfo.io/lite/me?token=1d1818c16be3b3", parse: (data) => data.ip || "未知", type: "json" },
-        { id: "us2", label: "④", url: "https://v6.api.ipinfo.io/lite/me?token=1d1818c16be3b3", parse: (data) => data.ip || "未知", type: "json" },
+        // 替换原有的 ipinfo 接口
+        { id: "us1", label: "③", url: "https://ipapi.co/json", parse: (data) => data.ip || "未知", type: "json" }, // 使用 ipapi
+        { id: "us2", label: "④", url: "http://ip-api.com/json", parse: (data) => data.query || "未知", type: "json" }, // 使用 ip-api
         { id: "user-ipv4", label: "⑤", url: "https://api.ipify.org?format=json", parse: (data) => data.ip || "未知", type: "json" },
         { id: "webrtc-ip", label: "⑥", parse: () => "检测中...", type: "webrtc" },
         { id: "user-ipv6", label: "⑦", url: "https://api6.ipify.org?format=json", parse: (data) => data.ip || "未知", type: "json" },
@@ -1002,8 +1003,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         };
 
-
-
         rtcPeerConnection.onicegatheringstatechange = () => {
             if (rtcPeerConnection.iceGatheringState === "complete" && !detectedIP) {
                 webrtcStatusElement.textContent = "未检测到";
@@ -1134,7 +1133,8 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("user-ipv6-new").textContent = ipv6;
         fetchGeoInfo(ipv6, "user-ipv6-new-geo");
     };
-});</script>
+});
+</script>
 
 <!-- 开发者工具 -->
 <!--
