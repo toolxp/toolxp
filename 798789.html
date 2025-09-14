@@ -1,0 +1,825 @@
+<!--<!DOCTYPE html><script src="https://toolxp.907000.xyz/email-html.js"></script>-->
+
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>临时邮箱 | 匿名免注册邮箱 | ToolXP</title>
+<meta name="description" content="免费生成临时邮箱地址，支持自定义前缀与多种后缀，无需注册即可收发邮件，保护隐私，避免垃圾邮件。">
+<meta name="keywords" content="临时邮箱, 10 分钟邮箱, 匿名邮箱, 免注册邮箱, 邮件接收工具, ToolXP 工具">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://toolxp.com/temporary-email">
+<link rel="icon" href="https://code.907000.xyz/logo.png" type="image/png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "临时邮箱",
+  "operatingSystem": "Web",
+  "applicationCategory": "SecurityApplication",
+  "url": "https://toolxp.com/temporary-email",
+  "description": "免费生成临时邮箱地址，10分钟自动删除，支持自定义前缀与多种后缀，无需注册即可收发邮件，保护隐私，避免垃圾邮件。",
+  "creator": {
+    "@type": "Organization",
+    "name": "ToolXP"
+  },
+  "inLanguage": "zh-CN"
+}
+</script>
+
+
+
+
+<style>
+body {
+    background: #0e111b;
+    margin: 0;
+    min-height: 100vh;
+    background-image: linear-gradient(90deg, #3f3f3f13 1px, transparent 1px), /* 垂直线条 */ linear-gradient(180deg, #3f3f3f13 1px, transparent 1px), /* 水平线条 */ linear-gradient(135deg, #010202, #080c15, #0c101a, #111521, #0c101a, #080c15, #010202);
+    background-size: 60px 60px, 60px 60px, cover;
+    background-repeat: repeat, repeat, no-repeat;
+    background-attachment: fixed;
+    background-blend-mode: screen, screen, normal;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #0e111b10;
+    padding: 0.5rem 1.5rem;
+    border-bottom: 1px solid #273367;
+    flex-wrap: wrap;
+}
+
+  .sitename {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #ff8033;
+  }
+
+  .nav-toggle {
+    display: none;
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 1rem;
+    font-size: 17px;
+    flex-wrap: nowrap; /* 防止导航文本换行 */
+    white-space: nowrap; /* 确保文本不换行 */
+  }
+
+  .nav-links a {
+    text-decoration: none;
+    padding: 0.5rem;
+    color: #6fcdfb;
+  }
+
+  /* 子菜单的新样式 */
+  .submenu {
+    flex-direction: column;
+    position: absolute;
+    width: 100%;
+    border-radius: 4px;
+    margin-top: 15px;
+    background-color: transparent;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-20px);
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease,
+      visibility 0.3s ease;
+    min-width: 0; /* 取消最小宽度限制 */
+    padding: 0; /* 去除多余的内边距 */
+    width: auto; /* 让子菜单宽度自适应 */
+  }
+
+  .submenu a {
+    display: block;
+    padding: 0.8rem;
+    color: #6fcdfb;
+    text-align: left;
+    background: transparent;
+  }
+
+  .nav-links a:hover,
+  .submenu a:hover {
+        color: #fffb05;
+/*        transform: scale(1.2); */
+        text-shadow: 0 0 26px rgba(255, 251, 5, 1),
+            0 0 31px rgba(255, 251, 5, 1),
+            0 0 36px rgba(255, 251, 5, 0.7);
+  }
+
+  /* 响应式样式 */
+  @media (max-width: 700px) {
+    .nav-toggle {
+      display: block;
+      color: #05fff6;
+      font-size: 25px;
+    }
+
+    .nav-links {
+      flex-direction: column;
+      width: 100%;
+      display: none;
+      gap: 0;
+    }
+
+    .nav-links.active {
+      display: flex;
+    }
+
+    .nav-links a,
+    .menu-item {
+      width: auto;
+      text-align: center;
+      padding: 1rem;
+      border-top: 1px solid rgba(39, 51, 103);
+    }
+
+    .navbar {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .navbar-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: auto 6% auto 3%;
+      height: 50px;
+    }
+
+    /* 移动子菜单调整 */
+    .submenu {
+      position: static;
+      opacity: 0;
+      transform: translateY(-20px);
+      transition:
+        opacity 0.3s ease,
+        transform 0.3s ease;
+      visibility: hidden;
+      display: none; /* 确保不占用空间 */
+    }
+
+    .submenu.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      display: flex; /* 活动时显示子菜单 */
+    }
+
+    .menu-item {
+      width: auto;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .menu-item a:focus {
+      outline: none;
+    }
+
+    .nav-links a:hover {
+      background-color: transparent;
+      border-radius: 4px;
+    }
+  }
+
+  /* 桌面悬停子菜单 */
+  @media (min-width: 701px) {
+    .nav-links .menu-item {
+      position: relative;
+    }
+
+    .submenu {
+      visibility: hidden; /* 默认隐藏子菜单 */
+      opacity: 0;
+      transform: translateY(-10px);
+      transition:
+        opacity 0.3s ease,
+        transform 0.3s ease,
+        visibility 0.3s ease;
+    }
+
+    .menu-item:hover .submenu {
+      visibility: visible; /* 悬停时显示子菜单 */
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* 防止子菜单消失得太快 */
+    .menu-item:hover .submenu {
+      pointer-events: auto;
+    }
+  }
+
+  .main-content {
+    padding: 10px 20px;
+    margin-top: 30px;
+    height: auto;
+  }
+
+  .containerpost {
+    max-width: 1250px;
+    margin: 0 auto;
+    border-radius: 8px;
+    line-height: 1.6;
+    color: #d1d1d1;
+    --border-color: #95e6ff;
+/*    text-align: center;  */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .menu-item {
+    margin-top: auto;
+    margin-bottom: auto;
+    position: relative;
+  }
+</style>
+
+
+
+
+
+<style>
+.zhanshikuang {
+    margin: 30px auto;
+}
+h1 {
+    color: #6fcdfb;
+    text-align: center;
+}
+
+.zhanshikuang p {
+    text-align: center;
+    color: #00b6ff;
+    font-size: 19px;
+    margin-top: 70px;
+}
+
+      footer {
+        padding: 20px 0;
+        text-align: center;
+        margin-top: 100px;
+        color: #999;
+      }
+      footer a, footer p {
+        color: #999;
+        margin: 10px 15px;
+        text-decoration: none;
+        transition: color 0.3s;
+        font-size: 13px;
+      }
+      footer a:hover {
+        color: #00ceff;
+      }
+
+/* 提示框 */
+.tip-box {
+    background-color: #222c3b60;
+    border-left: 5px solid #05ff2d;
+    padding: 15px;
+    margin: 20px auto;
+    border-radius: 8px;
+    font-size: 19px;
+    color: #dddddd;
+    max-width: 875px;
+}
+
+/* 常见问题CSS */
+.faq-section {
+  margin: 40px auto;
+  padding: 0 10px;
+  max-width: 875px;
+}
+
+.faq-section h2 {
+  font-size: 1.5em;
+  text-align: center;
+  margin-bottom: 30px;
+  color: #1ef192;
+}
+
+.faq details {
+  background: #13171a20;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  padding: 15px 20px;
+  cursor: pointer;
+  border: 1px solid #31353b;
+  transition: all 0.3s ease;
+}
+
+.faq summary {
+  font-size: 17px;
+  list-style: none;
+  color: #eee;
+  text-align: center;
+}
+
+.faq p {
+  margin-top: 10px;
+  line-height: 1.6;
+  color: #bbb;
+  font-size: 16px;
+}
+
+.faq li {
+    font-size: 16px;
+    color: #bbb;
+}
+
+.faq details[open] {
+    background: #00000030;
+    border-color: #60b8ff;
+}
+
+.faq details[open] summary {
+    color: #ff6700;
+}
+
+.faq summary:hover {
+    color: #00ceff;
+}
+
+section {
+    width: 95%;
+}
+
+/* 链接 */
+a.green-link {
+  color: #02df02 !important;
+  text-decoration: none !important;
+}
+a.green-link:hover {
+  color: yellow !important;
+}
+
+/* 设置滚动条的总宽度 */
+html::-webkit-scrollbar, 
+table::-webkit-scrollbar, 
+.sidebar-menu.fixed .sidebar-menu-inner::-webkit-scrollbar {
+	   width: 5px !important;
+    background-color: transparent; /* 滚动条背景色 */
+}
+
+table::-webkit-scrollbar {
+	height: 5px !important; /* 指定水平滚动条的高度 */
+    margin-top: 6px !important;
+}
+
+/* 设置滑块默认样式 */
+html::-webkit-scrollbar-thumb, 
+table::-webkit-scrollbar-thumb, 
+.sidebar-menu.fixed .sidebar-menu-inner::-webkit-scrollbar-thumb {
+    background-color: #535c66; /* 滑块默认颜色 */
+    border-radius: 9px; /* 滑块圆角样式 */
+}
+
+/* 滑块悬停时的样式 */
+html::-webkit-scrollbar-thumb:hover, 
+table::-webkit-scrollbar-thumb:hover, 
+.sidebar-menu.fixed .sidebar-menu-inner::-webkit-scrollbar-thumb:hover {
+    background-color: #00ceff; /* 滑块悬停颜色 */
+}
+
+/* firefox滚动条样式 */
+@-moz-document url-prefix() {
+    html {
+        scrollbar-width: thin; 
+        scrollbar-color: #535c66 transparent; /* 默认颜色 */
+		   border-radius: 9px; /* 滑块圆角样式 */
+    }
+
+    table {
+        scrollbar-width: thin;
+        scrollbar-color: #535c66 transparent;
+		   border-radius: 9px; /* 滑块圆角样式 */
+    }
+}
+
+.submenu a {
+    background: #0d111b;
+}
+
+.submenu {
+    z-index: 9999;
+}
+
+html, body {
+    overflow-x: hidden;
+}
+
+.navbar {
+    padding: 0.7rem 1.5rem;
+}
+
+
+.faq details[open] {
+  cursor: default; /* 鼠标悬浮时不显示手指 */
+}
+
+.faq summary {
+  cursor: pointer; /* 鼠标悬浮在 summary 上仍显示手指 */
+}
+
+/* 滑块轨道 */
+input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  width: 200px;
+  height: 7px;
+}
+
+
+/* Chrome / Safari / Edge */
+input[type="range"]::-webkit-slider-runnable-track {
+  background: #535c66;
+  height: 7px;
+  border-radius: 3px;
+}
+
+/* Firefox */
+input[type="range"]::-moz-range-track {
+  background: #535c66;
+  height: 7px;
+  border-radius: 3px;
+}
+
+/* 滑块按钮 */
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  background: #05ff2d;
+  border: 1px solid #05ff2d;
+  border-radius: 50%;
+  margin-top: -4px; /* ✅ 垂直居中关键 */
+  cursor: pointer;
+}
+</style>
+
+<!---------------- 临时邮箱CSS --------------------->
+  <style>
+ul#email-list hr {
+    display: none;
+}
+ 
+    /* 邮箱生成表单 */
+#email-form {
+    text-align: center;
+    padding: 20px;
+}
+
+.email-container11 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+    color: #dfda1c;
+    font-size: 21px;
+}
+
+/* 调整邮箱输入框和后缀选择框的排列方式 */
+.email-input-container {
+    display: flex;
+/*    justify-content: center;  */
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+}
+
+/* 邮箱前缀输入框 */
+#prefix, #suffix {
+    flex: 1;
+    padding: 10px;
+    background-color: #00000060;
+    border: 1px solid #31353b;
+    color: #fff;
+    border-radius: 5px;
+    max-width: 170px;
+    font-size: 17px;
+    width: 90%;
+}
+
+#prefix::placeholder {
+    color: #aaa;
+    opacity: 1;
+}
+
+#suffix {
+    max-width: 170px;
+}
+
+select option {
+    background-color: #101216;
+}
+
+.button-container123 {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  margin-top: 50px;
+}
+
+/* 按钮样式 */
+#generate-email-btn, #copy-email-btn, #refresh-email-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #818a8d60;
+    color: #ddd;
+    border: none;
+    cursor: pointer;
+    border-radius: 7px;
+    font-size: 14px;
+    text-align: center;
+    width: 150px;
+    box-sizing: border-box;
+    margin: 5px;
+}
+
+#generate-email-btn:hover,
+#copy-email-btn:hover,
+#refresh-email-btn:hover { 
+    background-color: #308f07;
+    color: #ffffff;
+}
+
+/* 邮箱地址显示 */
+#email-display {
+    font-size: 18px;
+    margin-top: 15px;
+}
+
+/* 邮件列表样式 */
+#email-container {
+    text-align: center;
+    padding: 20px;
+}
+
+#email-list-title {
+    border-bottom: 2px solid #ff9800;
+    padding-bottom: 5px;
+    margin-top: 20px;
+}
+
+#email-list {
+    list-style: none;
+    min-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #31353b;
+    margin: auto;
+    border-radius: 7px;
+    background: #10121660;
+    width: 95%;
+    padding: 0;
+    max-width: 875px;
+}
+
+.email-item {
+    background-color: transparent;
+    margin: 0;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.email-header {
+    background: #23262930;
+    padding: 15px;
+    font-size: 15px;
+    color: #ccc;
+    border: 1px solid #31353b;
+    border-radius: 7px;
+    transition: border-color 0.3s ease-in-out;
+}
+
+.email-body {
+    padding: 20px;
+}
+
+.email-header:hover {
+    border: 1px solid #00ceff;
+}
+
+ul>li {
+    padding: 10px;
+}
+
+.content__entry.u-inner {
+    border: 1px solid #31353b;
+    background: #505d6f50;
+}
+
+.email-content {
+    border: 1px solid #31353b;
+margin-top: 10px;
+    border-radius: 7px;
+}
+
+
+ul#email-list li {
+    text-align: center;
+}
+</style>
+<!-- 刷新进度条 -->
+<style>
+  #refresh-progress-container {
+    width: 90%;
+    background-color: transparent;
+    height: 4px;
+    margin-top: 10px;
+    display: none;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 865px;
+  }
+  #refresh-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(to right, #4caf50, #81c784);
+    transition: width 1.5s ease;
+  }
+</style>
+
+
+
+
+</head>
+
+<body>
+<nav class="navbar"><div class="navbar-header"><div class="sitename"><a href="https://toolxp.com" style="font-size: 23px; text-decoration: none; color: #6fcdfb;">ToolXp</a></div><button class="nav-toggle">☰</button></div><div class="nav-links" id="navMenu">
+
+<div class="menu-item">
+<div style="display: flex; align-items: center; gap: 0.5rem; font-size: 17px; color: #6fcdfb;">
+  <label for="hueSlider">🎨 调节颜色：</label>
+  <input type="range" id="hueSlider" min="0" max="360" value="0" aria-label="颜色旋转滑块，范围从 0 到 360 度">
+  <span id="hueValue" style="width: 50px;">0°</span>
+</div>
+</div>
+
+<div class="menu-item">
+<div style="display: flex; align-items: center; gap: 0.5rem; font-size: 17px; color: #6fcdfb;">
+  <label for="invertSlider">🌓 调节亮度：</label>
+  <input type="range" id="invertSlider" min="0" max="1" step="0.01" value="0" aria-label="亮度调节滑块，范围从 0 到 1">
+  <span id="invertValue" style="width: 50px;">0.00</span>
+</div>
+</div>
+
+<div class="menu-item"><a href="#">跨境工具</a><div class="submenu"><a href="/ip-leak-test">IP/DNS 泄露检测</a><a href="/browser-security-detection">游览器安全检测</a><a href="/ip-blacklist">IP 黑名单检测</a><a href="/temporary-email">临时邮箱</a><a href="/ip-quality">IP 信誉检测</a><a href="/china-firewall">域名被墙检测</a><a href="/uncloak">反伪装检测</a></div></div>
+
+ <div class="menu-item">
+ <a href="https://toolxp.com">首页</a>
+</div>
+</div></div></nav>
+
+
+    <div class="main-content">
+
+    <div class="containerpost">
+        
+
+<!-- h1标题 -->
+<h1>临时邮箱</h1>
+ <section><div class="tip-box">免费临时邮箱，保护你的隐私。</div>
+<div class="zhanshikuang">
+<p>快速生成临时邮箱地址，支持多后缀，自定义邮箱名。<br>有效期10分钟，自动删除，无法恢复。<br>前缀名必须唯一，无论选择任何后缀。</p>
+</div>
+</section>
+
+    
+<!-- 页面内容 -->
+
+<div class="email-input-container">
+
+    <input type="text" id="prefix" placeholder="自定义邮箱前缀">
+
+
+  <select id="suffix">
+    <option>@cdns.nyc.mn</option>
+    <option>@df61.qzz.io</option>
+    <option>@df5c.ggff.net</option>
+    <option>@x6b.dpdns.org</option>
+  </select>
+</div>
+
+    <div class="button-container123">
+    
+    <div class="button-container">
+    <button id="generate-email-btn" onclick="generateEmail()">生成邮箱</button>
+    <button id="copy-email-btn" onclick="copyEmail()">复制邮箱</button>
+    <button id="refresh-email-btn" onclick="fetchEmails()">刷新收件箱</button>
+    </div>   
+    </div>
+
+    <div class="email-container11"><span id="email"></span></div>
+
+<!-- 刷新进度条动画 -->
+<div id="refresh-progress-container">
+  <div id="refresh-progress-bar"></div>
+</div>
+
+    <!-- 邮件列表 -->
+    <ul id="email-list"></ul>
+
+
+
+
+
+
+
+
+<!-------------------------  常见问题 ------------------------------->
+<section class="faq-section">
+  <h2>常见问题解答</h2>
+  <div class="faq">
+    <details>
+      <summary> 什么是临时邮箱？</summary>
+      <p>简单讲，就是 匿名/免注册/ 的电子邮件服务，以其简单性和易用性而闻名，你在注册网站服务时无需真实的电子邮件，能确保个人电子邮件地址的隐私并避免垃圾邮件。</p>
+    </details>
+
+    <details>
+      <summary>临时邮箱安全吗？</summary>
+      <p>临时邮箱具有隐私保护功能，但不适用于存储重要信息。</p>
+    </details>
+
+    <details>
+      <summary>如何获取临时邮箱？</summary>
+      <p>只需在本页面输入你想要的邮箱前缀名，点击“生成邮箱”即可获得一个随机的临时邮箱，立即使用，无需注册。</p>
+    </details>
+
+    <details>
+      <summary>临时邮箱可以用于长期注册吗？</summary>
+      <p>不建议使用临时邮箱进行长期账户注册，因为邮箱通常在短时间后失效，无法用于账户恢复。此工具提供的临时邮箱会在  10 分钟后永久删除，任何人无法恢复。</p>
+    </details>
+
+    <details>
+      <summary>可以选择不同的邮箱后缀吗？</summary>
+      <p>是的，我们提供多个后缀选项，用户可以根据需求选择不同的域名，以提升兼容性。</p>
+    </details>
+
+  </div>
+</section>
+
+<!-- 常见问题结束 -->
+
+
+
+
+
+<!-- 回到顶部 -->
+<style>#backToTop{position:fixed;bottom:60px;right:10px;color:#000;border:none;font-size:30px;cursor:pointer;display:none;z-index:1000;background:0 0;outline:0}.tTpB{justify-content:center;position:fixed;right:10px;width:39px;border-radius:50%;cursor:pointer;visibility:hidden;opacity:0;z-index:9999;transform:scale(0);transition:transform .3s ease,opacity .3s ease,visibility .3s ease;top:23%}.tTpB.vbl{visibility:visible;opacity:1;transform:scale(1)}.tTpB:hover{opacity:.8}.tTpB svg{height:100%;width:100%;transform:rotate(-90deg);stroke-width:1.5;cursor:pointer}.tTpB svg .b{fill:transparent;stroke:#6671ff;opacity:.9}.tTpB svg .c{fill:none;stroke:yellow;stroke-dasharray:100 100;stroke-dashoffset:100;stroke-linecap:round}.tTpB svg .d{fill:none;stroke:yellow}.drK .tTpB svg .b{fill:#2d2d30;stroke:#16f9f5}.drK .tTpB svg .c{stroke:#16f9f5}.drK .tTpB svg .d{stroke:#16f9f5}.tTpB{display:flex;align-items:center}</style>
+
+<div class="tTpB" id="backTop" onclick="scrollToTop()">
+  <svg viewBox="0 0 34 34">
+    <circle class="b" cx="17" cy="17" r="15.92"></circle>
+    <circle class="c scrollProgress" cx="17" cy="17" r="15.92"></circle>
+    <path class="line d" d="M15.07,21.06,19.16,17l-4.09-4.06"></path>
+  </svg>
+</div>
+
+
+
+
+
+
+
+<footer>
+    <p>© 2025 toolxp.com 版权所有</p>
+    <p>
+        <a href="/disclaimer" >免费声明</a> |
+        <a href="/privacy">隐私政策</a>
+    </p>
+</footer>
+
+<!-- 页面内容结束 -->
+    </div><!-- containerpost 结束 -->
+  </div><!-- main-content 结束 -->
+
+
+<!-- 颜色、菜单、顶部、问题 -->
+<script>function _0x3c6e05(_0x13630b,_0x146d49,_0x49e84e,_0x10f59b){return _0x174e(_0x13630b-0x103,_0x146d49);}(function(_0x23d20c,_0x7c2eb){const _0x153594=_0x23d20c();function _0x25b85d(_0xb6817c,_0x5b081,_0x269076,_0x15d4f9){return _0x174e(_0x5b081- -0x210,_0x15d4f9);}function _0x50d6c3(_0x1a10ad,_0x4dc1c2,_0xbab369,_0x4ae08f){return _0x174e(_0xbab369-0x2f3,_0x1a10ad);}while(!![]){try{const _0x44fa70=-parseInt(_0x25b85d(-0x211,-0x210,-0x215,-0x1f6))/0x1+-parseInt(_0x25b85d(-0x218,-0x20f,-0x222,-0x215))/0x2*(parseInt(_0x50d6c3(0x2e7,0x2ee,0x2f5,0x2dd))/0x3)+parseInt(_0x50d6c3(0x310,0x2fb,0x2f6,0x305))/0x4*(parseInt(_0x50d6c3(0x303,0x2e8,0x2f7,0x30e))/0x5)+-parseInt(_0x50d6c3(0x301,0x2e3,0x2f8,0x2ea))/0x6*(-parseInt(_0x25b85d(-0x206,-0x20a,-0x20a,-0x21b))/0x7)+-parseInt(_0x50d6c3(0x2dd,0x2e4,0x2fa,0x312))/0x8+parseInt(_0x50d6c3(0x2fd,0x314,0x2fb,0x2f4))/0x9+parseInt(_0x50d6c3(0x2f8,0x2fa,0x2fc,0x2f4))/0xa*(parseInt(_0x25b85d(-0x220,-0x206,-0x1fa,-0x1ef))/0xb);if(_0x44fa70===_0x7c2eb){break;}else{_0x153594['push'](_0x153594['shift']());}}catch(_0x3cf16a){_0x153594['push'](_0x153594['shift']());}}}(_0x5891,0xe1ee5));(function(){const _0x51910e={'tvvRO':function(_0x276c69,_0x2d70f6){return _0x276c69!==_0x2d70f6;},'qGviK':function(_0x21c9e9,_0x4011d0){return _0x21c9e9+_0x4011d0;},'ororb':_0x4aab7a(0x2c3,0x2ae,0x2ab,0x2c0)};function _0x4aab7a(_0x426dee,_0x25a78c,_0xb99a28,_0x36dea6){return _0x174e(_0x25a78c-0x2a3,_0xb99a28);}const _0x26371b=_0x5cc962(-0x3a7,-0x3ab,-0x3b2,-0x3a2)['split']('|');function _0x5cc962(_0x44de3a,_0x5bbdda,_0x1069a5,_0x6c17ff){return _0x174e(_0x6c17ff- -0x3ae,_0x5bbdda);}let _0x505770=0x0;while(!![]){switch(_0x26371b[_0x505770++]){case'0':var _0x988be1='toolxp.com';continue;case'1':if(!_0x52455d){window['location'][_0x5cc962(-0x39d,-0x3ac,-0x3bb,-0x3a1)]('https://example.com');}continue;case'2':var _0x52455d=_0xae5214['test'](_0x21775b)&&_0x51910e['tvvRO'](_0x21775b,'');continue;case'3':var _0x21775b=window[_0x4aab7a(0x2a3,0x2b1,0x2cd,0x2a5)]['hostname'];continue;case'4':var _0xae5214=new RegExp(_0x51910e['qGviK'](_0x51910e[_0x5cc962(-0x39a,-0x3a4,-0x3b4,-0x39f)]+_0x988be1[_0x4aab7a(0x2c0,0x2b0,0x2ab,0x2b1)]('.','\x5c.'),'$'));continue;}break;}}());document['addEventListener'](_0x4079dd(-0xaf,-0xbf,-0xca,-0xc0),function(){const _0x5be04b={'NWypj':'active','tpiWA':_0x3d2fc6(-0x13b,-0x145,-0x13a,-0x157),'cUjwX':'.menu-item\x20>\x20a'};function _0x551ee0(_0xd13f6b,_0x4de86c,_0x216ce4,_0x5bff1e){return _0x174e(_0x4de86c-0x17e,_0xd13f6b);}function _0x50abe0(){function _0x8fb03(_0x385b7a,_0x501308,_0x297bcb,_0xad5a69){return _0x174e(_0x297bcb-0xe7,_0x501308);}function _0x46d8f4(_0x5bcce7,_0x56a95e,_0x23ab54,_0x3aa6dd){return _0x174e(_0x23ab54-0x28,_0x56a95e);}document['getElementById']('navMenu')[_0x46d8f4(0x4d,0x48,0x3a,0x2b)][_0x46d8f4(0x49,0x31,0x3b,0x3a)]('active');}function _0x33ba0b(_0x52523f){function _0x32388f(_0x2bd743,_0x1cb6a8,_0x1e8c0e,_0x19869c){return _0x174e(_0x1e8c0e-0x14,_0x2bd743);}function _0x2d2e5b(_0x200b90,_0x5844a5,_0x351602,_0x533ec8){return _0x174e(_0x200b90- -0x315,_0x5844a5);}const _0x1dabb3=_0x52523f[_0x32388f(0xf,0x3c,0x28,0xc)][_0x2d2e5b(-0x300,-0x2f6,-0x2f1,-0x313)];if(_0x1dabb3&&_0x1dabb3[_0x2d2e5b(-0x303,-0x2fe,-0x2fa,-0x31c)][_0x32388f(0x10,0x30,0x2a,0x37)](_0x2d2e5b(-0x2fe,-0x2e6,-0x306,-0x2f5))){_0x1dabb3[_0x32388f(0x2f,0x3a,0x26,0x17)][_0x32388f(0x35,0x21,0x27,0xc)](_0x5be04b['NWypj']);}}const navToggle=document['querySelector'](_0x3d2fc6(-0x165,-0x15c,-0x140,-0x150));if(navToggle){navToggle['addEventListener'](_0x5be04b[_0x3d2fc6(-0x158,-0x158,-0x146,-0x14f)],_0x50abe0);}const menuItems=document['querySelectorAll'](_0x5be04b['cUjwX']);function _0x3d2fc6(_0x121f7d,_0x47a8b6,_0x339a6b,_0x2c2065){return _0x174e(_0x2c2065- -0x168,_0x121f7d);}menuItems[_0x551ee0(0x1b0,0x198,0x19e,0x18d)](_0x1c175f=>{function _0x1af312(_0x1c4175,_0x261c52,_0x390fe9,_0x4ba999){return _0x174e(_0x261c52-0x114,_0x1c4175);}function _0x373bc0(_0xb4f34,_0x14317a,_0x248985,_0x27587d){return _0x174e(_0xb4f34- -0x299,_0x14317a);}_0x1c175f[_0x373bc0(-0x27e,-0x293,-0x295,-0x281)](_0x373bc0(-0x288,-0x279,-0x292,-0x29e),_0x33ba0b);});});document[_0x3c6e05(0x11e,0x118,0x10e,0x10f)]('DOMContentLoaded',function(){function _0x18a2dd(_0x4c5c4a,_0x3c4c89,_0x1d74b4,_0x275fc8){return _0x174e(_0x1d74b4-0x4e,_0x275fc8);}const _0x5756f1={'ROfEQ':_0x50c1e5(-0x348,-0x358,-0x338,-0x354),'toPTd':'summary','gajtn':_0x18a2dd(0x50,0x76,0x5f,0x67),'SPaxJ':'.faq\x20details'};const allDetails=document[_0x18a2dd(0x83,0x57,0x6b,0x6b)](_0x5756f1['SPaxJ']);function _0x50c1e5(_0xaa4bdd,_0x1c874b,_0x1df5ed,_0x14d667){return _0x174e(_0xaa4bdd- -0x364,_0x1c874b);}allDetails['forEach'](_0x5ca313=>{const summary=_0x5ca313['querySelector'](_0x5756f1['toPTd']);summary['addEventListener'](_0x5756f1['gajtn'],function(_0x39b156){_0x39b156['preventDefault']();const _0x1f3186=_0x5ca313[_0x213016(-0x5d,-0x5b,-0x4d,-0x53)](_0x5756f1[_0x213016(-0x5c,-0x46,-0x79,-0x65)]);allDetails[_0x11b727(0x1,-0x13,-0x2b,-0x17)](_0x33c0fc=>_0x33c0fc['removeAttribute'](_0x213016(-0x5f,-0x79,-0x44,-0x6b)));function _0x11b727(_0x2e15be,_0x1b2c44,_0x30659b,_0x1e18da){return _0x174e(_0x1b2c44- -0x2d,_0x1e18da);}function _0x213016(_0x442450,_0x218289,_0x5c3464,_0x2b2557){return _0x174e(_0x442450- -0x7b,_0x5c3464);}if(!_0x1f3186){_0x5ca313[_0x213016(-0x5b,-0x5d,-0x50,-0x67)](_0x213016(-0x5f,-0x50,-0x68,-0x5e),'');}});});});const invertSlider=document[_0x3c6e05(0x124,0x130,0x126,0x128)]('invertSlider');const hueSlider=document['getElementById'](_0x4079dd(-0x94,-0xad,-0xa5,-0xbb));const invertValue=document['getElementById']('invertValue');const hueValue=document['getElementById']('hueValue');function updateFilter(){const _0x521365=invertSlider['value'];const _0x53e63f=hueSlider[_0x5497f4(-0x1c9,-0x1ce,-0x1bf,-0x1cd)];function _0x5497f4(_0x1bd3e9,_0xd5ee0d,_0x263c1e,_0x4fc4a5){return _0x174e(_0x4fc4a5- -0x1f0,_0x1bd3e9);}function _0x3f4123(_0x375bd8,_0x2b1e49,_0x4cdeb9,_0x49fcb1){return _0x174e(_0x49fcb1- -0xcc,_0x4cdeb9);}document[_0x3f4123(-0x9a,-0xbc,-0x91,-0xa8)][_0x3f4123(-0xb6,-0xba,-0xae,-0xa7)][_0x5497f4(-0x1da,-0x1e3,-0x1bd,-0x1ca)]=_0x5497f4(-0x1d8,-0x1ce,-0x1ce,-0x1c9)+_0x521365+_0x3f4123(-0xaf,-0x8e,-0x87,-0xa4)+_0x53e63f+_0x3f4123(-0x97,-0x95,-0xb6,-0xa3);invertValue['textContent']=parseFloat(_0x521365)['toFixed'](0x2);hueValue['textContent']=_0x53e63f+'°';}invertSlider[_0x3c6e05(0x11e,0x108,0x10a,0x11d)](_0x4079dd(-0xb8,-0xa5,-0xb4,-0xb6),updateFilter);function _0x5891(){const _0x496fa5=['input','querySelector','.scrollProgress','getTotalLength','assign','transition','scrollTop','PrZTq','innerHeight','scroll','onscroll','vbl','BAQEY','.tTpB','onclick','nyEVs','396096KpWaNK','946ayatgn','4269OApwRY','8gvjhwG','1422130WZLQfq','81858sjyISK','301DIxRpP','8946688rEjWch','12643560tkxBZg','5525830slhtGn','11whTiSn','(^|\x5c.)','0|3|4|2|1','replace','location','ororb','DOMContentLoaded','click','classList','toggle','target','nextElementSibling','contains','submenu','.nav-toggle','tpiWA','forEach','addEventListener','open','querySelectorAll','hasAttribute','ROfEQ','setAttribute','getElementById','hueSlider','value','documentElement','style','filter','invert(',')\x20hue-rotate(','deg)'];_0x5891=function(){return _0x496fa5;};return _0x5891();}hueSlider['addEventListener'](_0x4079dd(-0xb3,-0xa5,-0xb2,-0x90),updateFilter);updateFilter();var progressPath=document[_0x3c6e05(0x12e,0x11c,0x122,0x116)](_0x3c6e05(0x12f,0x14b,0x12f,0x117)),pathLength=progressPath[_0x3c6e05(0x130,0x140,0x148,0x113)]();Object[_0x3c6e05(0x131,0x146,0x134,0x125)](progressPath['style'],{'transition':'none','strokeDasharray':pathLength+'\x20'+pathLength,'strokeDashoffset':pathLength});progressPath['getBoundingClientRect']();function _0x174e(_0x390fca,_0x5891f1){const _0x174e7e=_0x5891();_0x174e=function(_0xe86771,_0x50a067){_0xe86771=_0xe86771-0x0;let _0x1490f2=_0x174e7e[_0xe86771];return _0x1490f2;};return _0x174e(_0x390fca,_0x5891f1);}progressPath[_0x3c6e05(0x128,0x10c,0x10f,0x117)][_0x4079dd(-0x9d,-0xa0,-0xa4,-0xbb)]='stroke-dashoffset\x2010ms\x20linear';var updateProgress=()=>{function _0x5c5fe5(_0x50497e,_0x197312,_0x53a6d0,_0x17e8a0){return _0x174e(_0x17e8a0-0x155,_0x53a6d0);}const _0x12df2a={'PrZTq':function(_0x176228,_0x2090d2){return _0x176228-_0x2090d2;},'zHSLk':function(_0x18551e,_0x26a06b){return _0x18551e*_0x26a06b;}};function _0xe77e89(_0x1acf09,_0x3e321b,_0x13ba70,_0x2a16d0){return _0x174e(_0x3e321b-0xc6,_0x13ba70);}var _0x582aea=document['documentElement'][_0xe77e89(0xee,0xf6,0xef,0xea)],_0x4f5e73=_0x12df2a[_0x5c5fe5(0x16b,0x177,0x19d,0x186)](document['documentElement']['scrollHeight'],window[_0xe77e89(0xdc,0xf8,0x10d,0xe2)]);progressPath[_0xe77e89(0xfc,0xeb,0xe3,0xf1)]['strokeDashoffset']=_0x12df2a['PrZTq'](pathLength,_0x12df2a['zHSLk'](_0x582aea,pathLength)/_0x4f5e73);};updateProgress();window[_0x3c6e05(0x11e,0x13a,0x110,0x101)](_0x3c6e05(0x136,0x144,0x136,0x149),updateProgress);window[_0x4079dd(-0xb3,-0x9b,-0x7e,-0x89)]=()=>{function _0x47f3af(_0x134786,_0x35bed8,_0x596a3c,_0x22c644){return _0x174e(_0x596a3c- -0x7f,_0x22c644);}const _0x727f7c={'abcwl':_0x26d972(0x161,0x147,0x15a,0x162),'BAQEY':function(_0x3d05db,_0x1351c9){return _0x3d05db>_0x1351c9;}};function _0x26d972(_0x46b9da,_0x3da73f,_0x3f7c05,_0x1e20c3){return _0x174e(_0x3da73f-0x112,_0x1e20c3);}document[_0x26d972(0x14a,0x13d,0x157,0x157)]('.tTpB')['classList']['toggle'](_0x727f7c['abcwl'],_0x727f7c[_0x26d972(0x15c,0x148,0x12d,0x147)](document[_0x26d972(0x13a,0x136,0x144,0x153)][_0x26d972(0x13c,0x142,0x14e,0x128)],0x0));};function _0x4079dd(_0x2358df,_0x3501cf,_0x2bb9b7,_0x1fafe0){return _0x174e(_0x3501cf- -0xcf,_0x2bb9b7);}document['querySelector'](_0x3c6e05(0x13a,0x145,0x12d,0x143))[_0x3c6e05(0x13b,0x142,0x156,0x127)]=()=>{function _0x5cbd25(_0x162196,_0x58f4fa,_0x22ac98,_0x54a087){return _0x174e(_0x54a087-0x11c,_0x22ac98);}function _0x6b9739(_0x14399a,_0x3d63bd,_0x961fb7,_0x4d53b0){return _0x174e(_0x3d63bd- -0xfc,_0x961fb7);}const _0x7ff94f={'nyEVs':'smooth'};window[_0x6b9739(-0xb6,-0xc9,-0xda,-0xad)]({'top':0x0,'behavior':_0x7ff94f[_0x6b9739(-0xbf,-0xc3,-0xb9,-0xc3)]});};</script>
+
+
+
+<script src="https://code.907000.xyz/email.jiexi.js"></script>
+<script src="https://code.907000.xyz/email.js"></script>
+
+
+</body></html>
+
