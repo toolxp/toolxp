@@ -1,6 +1,3 @@
-<!--<!DOCTYPE html><script src="https://toolxp.907000.xyz/email-html.js"></script>-->
-
-
 <!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -818,8 +815,131 @@ ul#email-list li {
 
 
 <script src="https://code.907000.xyz/email.jiexi.js"></script>
-<script src="https://code.907000.xyz/email.js"></script>
+<script>
+const apiBaseUrl = "https://myemail.cdns.nyc.mn";
+let emailAddress = "";
+let mailboxId = "";
 
 
+// 创建邮箱
+function generateEmail() {
+  const prefix = document.getElementById("prefix").value.trim();
+  const suffix = document.getElementById("suffix").value;
+  if (!prefix) return alert("请输入邮箱前缀！");
+  emailAddress = prefix + suffix;
+  document.getElementById("email").innerText = emailAddress;
+
+  // 清空旧邮件列表
+  document.getElementById("email-list").innerHTML = "";
+
+  fetch(`${apiBaseUrl}/api/mailboxes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Origin": "https://ny.cdns.nyc.mn",
+      "Referer": "https://ny.cdns.nyc.mn"
+    },
+    body: JSON.stringify({
+      address: prefix,
+      expiresInHours: 24,
+      domain: suffix.replace("@", "")
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success && data.mailbox?.id) {
+      mailboxId = data.mailbox.id;
+//      localStorage.setItem("tempMailbox", JSON.stringify({ id: mailboxId, address: emailAddress }));
+      console.log("创建成功:", emailAddress);
+      fetchEmails();
+    } else {
+      alert("邮箱创建失败：" + (data.error || "未知错误"));
+    }
+  })
+  .catch(err => console.error("创建失败", err));
+}
+
+// 复制邮箱地址
+function copyEmail() {
+  if (!emailAddress) return alert("请先生成邮箱！");
+  navigator.clipboard.writeText(emailAddress)
+    .then(() => alert("邮箱地址已复制：" + emailAddress))
+    .catch(err => console.error("复制失败:", err));
+}
+
+// 获取邮件列表（带刷新动画）
+function fetchEmails() {
+  const refreshBtn = document.getElementById("refresh-email-btn");
+  const progressContainer = document.getElementById("refresh-progress-container");
+  const progressBar = document.getElementById("refresh-progress-bar");
+
+  refreshBtn.disabled = true;
+  progressContainer.style.display = "block";
+  progressBar.style.width = "0%";
+
+  setTimeout(() => progressBar.style.width = "50%", 200);
+  setTimeout(() => progressBar.style.width = "100%", 800);
+
+  const nameOnly = emailAddress.split("@")[0];
+  fetch(`${apiBaseUrl}/api/mailboxes/${nameOnly}/emails`)
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById("email-list");
+      list.innerHTML = "";
+      if (data.success && data.emails.length > 0) {
+        data.emails.forEach(email => fetchEmailDetails(email.id));
+      } else {
+        list.innerHTML = "<li>暂无新邮件。</li>";
+      }
+    })
+    .catch(err => console.error("获取失败", err))
+    .finally(() => {
+      setTimeout(() => {
+        refreshBtn.disabled = false;
+        progressContainer.style.display = "none";
+        progressBar.style.width = "0%";
+      }, 1700);
+    });
+}
+
+// 渲染邮件详情（保留原始结构）
+function fetchEmailDetails(emailId) {
+  fetch(`${apiBaseUrl}/api/emails/${emailId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.email) {
+        const email = data.email;
+        const item = document.createElement("li");
+
+        const receivedAt = new Date(email.receivedAt * 1000).toLocaleString();
+        const rawHtml = email.htmlContent || `<pre>${email.textContent || "无正文内容"}</pre>`;
+        const safeHtml = DOMPurify.sanitize(rawHtml);
+
+        item.innerHTML = `
+          <div class="email-item">
+            <div class="email-header">
+              <strong>发件人:</strong> ${email.fromName} (${email.fromAddress})<br>
+              <strong>主题:</strong> ${email.subject}<br>
+              <strong>时间:</strong> ${receivedAt}
+            </div>
+            <div class="email-content" style="display: none;">
+              <div class="email-body">${safeHtml}</div>
+            </div>
+            <hr>
+          </div>
+        `;
+
+        item.querySelector(".email-header").addEventListener("click", () => {
+          const content = item.querySelector(".email-content");
+          content.style.display = content.style.display === "none" ? "block" : "none";
+        });
+
+        document.getElementById("email-list").appendChild(item);
+      }
+    })
+    .catch(err => console.error("详情失败:", err));
+}
+</script>
+
+<!-- 开发者工具 -->
 </body></html>
-
