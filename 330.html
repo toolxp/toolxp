@@ -826,18 +826,16 @@ input#domain-input {
     { id: "toolxp-beijing", name: "北京" },
     { id: "toolxp-shanghai", name: "上海" },
     { id: "toolxp-zhuhai", name: "珠海" },
-    { id: "toolxp-suzhou", name: "苏州" },
-    { id: "toolxp-lijiang", name: "丽江" },
-    { id: "toolxp-union", name: "———— 其他检测项 ————" }
+    { id: "toolxp-suzhou", name: "苏州" }
   ];
 
   const workerHosts = [
-    "https://gfw.907000.xyz",
-    "https://gfw1.907000.xyz",
-    "https://gfw2.907000.xyz",
-    "https://gfw3.907000.xyz",
-    "https://gfw4.907000.xyz",
-    "https://gfw5.907000.xyz",
+//    "https://gfw.907000.xyz",
+//    "https://gfw1.907000.xyz",
+//    "https://gfw2.907000.xyz",
+//    "https://gfw3.907000.xyz",
+//    "https://gfw4.907000.xyz",
+    "https://gfw5.907000.xyz",	  
   ];
 
   const secret = "toolxp-secret";
@@ -862,21 +860,8 @@ input#domain-input {
       const signature = await sha256(domain + timestamp + secret);
       const results = await detectWithRandomWorker(domain, timestamp, signature);
 
-      results.forEach(({ source, status, unionDetails, isTip }) => {
-        if (isTip) {
-          const tip = document.createElement("div");
-          tip.textContent = source;
-          tip.style.fontWeight = "bold";
-          tip.style.margin = "16px 0 8px 0";
-          document.getElementById("result-content").appendChild(tip);
-          return;
-        }
-
-        if (unionDetails) {
-          renderUnionResult(source, unionDetails);
-        } else {
-          renderResult(source, status);
-        }
+      results.forEach(({ source, status }) => {
+        renderResult(source, status);
       });
 
       document.getElementById("result").style.display = "block";
@@ -900,23 +885,13 @@ input#domain-input {
     try {
       const tasks = engines.map(async (engine) => {
         if (engine.id === "tip") {
-          return { source: engine.name, isTip: true };
+          return { source: engine.name, status: "info" }; // 只保留提示信息，不处理失效API
         }
 
         const res = await fetch(`${host}/?domain=${encodeURIComponent(domain)}&engine=${engine.id}`, {
           headers
         });
         const json = await res.json();
-
-        if (engine.id === "toolxp-union") {
-          const unionDetails = Array.isArray(json.result)
-            ? json.result.map(item => ({
-                type: item.type || "未知",
-                msg: item.msg ?? null
-              }))
-            : [];
-          return { source: engine.name, unionDetails };
-        }
 
         const status = parseStatus(json, engine.id);
         return { source: engine.name, status };
@@ -941,10 +916,6 @@ input#domain-input {
   function parseStatus(json, engineId) {
     if (engineId === "toolxp-zhuhai") {
       return json.Flag === "1" ? "not_blocked" : json.Flag === "0" ? "blocked" : "error";
-    }
-    if (engineId === "toolxp-lijiang") {
-      return json.message === "域名正常" ? "not_blocked" :
-             json.message === "域名被墙" ? "blocked" : "error";
     }
     if (engineId === "toolxp-suzhou") {
       if (json.message?.includes("正常")) return "not_blocked";
@@ -981,44 +952,6 @@ input#domain-input {
     document.getElementById("result-content").appendChild(container);
   }
 
-  function renderUnionResult(source, details) {
-    const title = document.createElement("div");
-    title.textContent = source;
-    title.style.fontWeight = "bold";
-    title.style.margin = "16px 0 8px 0";
-    document.getElementById("result-content").appendChild(title);
-
-    const hiddenTypes = ["小米", "域名过期时间", "域名注册商", "DNS 服务商"];
-
-    details.forEach(({ type, msg }) => {
-      if (hiddenTypes.includes(type)) return;
-
-      const container = document.createElement("div");
-      container.style.display = "flex";
-      container.style.justifyContent = "space-between";
-      container.style.marginBottom = "8px";
-
-      const left = document.createElement("div");
-      left.textContent = type;
-
-      const right = document.createElement("div");
-      const displayMsg = type === "微信" && msg === null ? "域名正常" : (msg || "无结果");
-      right.textContent = displayMsg;
-
-      if (displayMsg.includes("正常")) {
-        right.style.color = "#00ff00";
-      } else if (displayMsg.includes("被墙") || displayMsg.includes("异常")) {
-        right.style.color = "red";
-      } else {
-        right.style.color = "orange";
-      }
-
-      container.appendChild(left);
-      container.appendChild(right);
-      document.getElementById("result-content").appendChild(container);
-    });
-  }
-
   async function sha256(message) {
     const encoder = new TextEncoder();
     const data = encoder.encode(message);
@@ -1027,6 +960,7 @@ input#domain-input {
     return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
   }
 </script>
+
 
 
 
