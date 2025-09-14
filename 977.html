@@ -861,11 +861,10 @@ document.addEventListener("DOMContentLoaded", function () {
         { id: "us2", label: "④", url: "https://jkapi.com/api/zz_ip", parse: (data) => data.data.addr || "未知", type: "json" }, // 修改这里
         { id: "user-ipv4", label: "⑤", url: "https://api.pearktrue.cn/api/ip/high", parse: (data) => data.ip || "未知", type: "json" },
         { id: "webrtc-ip", label: "⑥", parse: () => "检测中...", type: "webrtc" },
-   //     { id: "user-ipv6", label: "⑦", url: "https://api6.ipify.org", parse: (data) => data.trim() || "未知", type: "text" },
-		{ id: "user-ipv6", label: "⑦", url: "http://v6.ip.zxinc.org/getip, parse: (data) => data.trim() || "未知", type: "text" },
-		
+        { id: "user-ipv6", label: "⑦", url: "https://api6.ipify.org", parse: (data) => data.trim() || "未知", type: "text" },		
         { id: "user-ipv6-test", label: "⑧", url: "https://ipv6.ddnspod.com", parse: (data) => data, type: "text" },
-        { id: "user-ipv6-new", label: "⑨", url: "https://ipv6.losangeles.test-ipv6.com/ip/?callback=jsonpIPv6Callback", type: "jsonp" }
+        { id: "user-ipv6-new", label: "⑨", url: "https://ipv6.losangeles.test-ipv6.com/ip/?callback=jsonpIPv6Callback", type: "jsonp" },
+		{ id: "user-ipv6-zxinc", label: "⑩", url: "https://v6.ip.zxinc.org/getip", parse: (data) => data.trim() || "未知", type: "text" },
     ];
 
     const dnsAPIs = [
